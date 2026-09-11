@@ -1,0 +1,45 @@
+.section-card {
+  background: #fff;
+  border: 1px solid var(--color-neutral-200);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.section-card__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-6);
+  background: var(--color-neutral-50);
+  border-bottom: 1px solid var(--color-neutral-200);
+}
+
+.section-card__number {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-primary-600);
+  letter-spacing: 0.04em;
+}
+
+.section-card__title {
+  flex: 1;
+}
+
+.section-card__body {
+  padding: var(--space-6);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4) var(--space-6);
+}
+
+/* Full-width override for children that need to span both columns */
+.section-card__body .full-width {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 900px) {
+  .section-card__body {
+    grid-template-columns: 1fr;
+  }
+}

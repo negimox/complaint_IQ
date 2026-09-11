@@ -34,7 +34,6 @@ Before implementation, please:
 *   LLMs: Utilize Groq([https://console.groq.com/docs/models](https://console.groq.com/docs/models)), specifically **the gemma2-9b-it model** (assume you will create a new API token for this). You may also consider **llama-3.3-70b-versatile** for context.
 *   Database: MySQL/Postgres SQL
 *   Font: Google Inter.
-*   **You may use Gemini 2.5 Pro (1-month free trial) or ChatGPT 5.0 for all coding and research, with zero human-written code.**
 
 **Note: Do not simply copy and paste AI-generated code. Understand what the code does, then implement** and adapt it to match the workflow shown in the demo.
 

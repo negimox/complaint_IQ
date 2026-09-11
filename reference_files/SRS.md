@@ -23,6 +23,8 @@ Watching the demo video end-to-end (not just the static screenshot) surfaces the
 
 Because the two references disagree slightly on section boundaries, **treat the video as the source of truth for behavior** and **merge both for the field list** (union of everything seen). That merged field list is what Section 5 (data model) below is built from.
 
+**Section naming decision:** The video uses "Facility & Material Impact" (§3) and "Defect Analysis" (§4), while the screenshot uses **"Complaint Details"** (§3) and **"Initial Assessment & Priority"** (§4). We adopt the **screenshot's labels** throughout this spec — they're more intuitive and communicate purpose more clearly to reviewers who are not pharma domain experts, which aligns with the brief's *"we are not looking for domain experts"* stance. The video's fields (Originating Site Block, Impacted NPM) are folded into Section 3 as sub-fields under Complaint Details.
+
 ### Domain primer (why these fields exist)
 This is a **Customer Complaint** module inside a pharmaceutical **Quality Management System (QMS)**, for a manufacturer of **API** (Active Pharmaceutical Ingredient — the bulk drug substance) and **FDF** (Finished Dosage Form — the tablet/capsule/injectable sold to patients). In real QMS practice (ICH Q10, 21 CFR 211.198, ISO 9001/13485 patterns), a complaint record exists to:
 - Capture **who/what/when** (origin, product, batch) with enough traceability to pull the batch manufacturing record.
@@ -44,7 +46,7 @@ The assignment explicitly says *"we are not looking for domain experts"* — so 
 | LLM | Groq — `gemma2-9b-it` (primary, required); `llama-3.3-70b-versatile` (heavier reasoning, optional per brief) | Free tier, no credit card — see Section 3 |
 | Database | PostgreSQL (recommended over MySQL — see below) | |
 | Font | Google Inter | |
-| AI-assisted coding | Gemini 2.5 Pro / ChatGPT-5 / Claude, etc. | Understand-then-adapt, not copy-paste, per the brief |
+
 
 **Postgres over MySQL, and why it's worth stating in your submission:** you get `pgvector` for free, which turns "Duplicate Complaint Detection" (a bonus feature) into a ~20-line feature instead of a new infra dependency. If your reviewers specifically want MySQL, the schema in Section 5 ports over 1:1 minus the vector column.
 
@@ -101,7 +103,7 @@ flowchart TD
 **Node-by-node:**
 
 1. **Router** — cheap, no LLM needed: checks whether the request is a file upload or plain text and branches.
-2. **Document Loader** — text-layer PDFs via `pdfplumber`; DOCX via `python-docx`; EML via Python's `email` stdlib; images/scans via `pytesseract`. This matches the video's "Extracting tabular data via OCR…" status line — surface that same kind of live status to the frontend via Server-Sent Events (SSE), which FastAPI supports natively for free (no extra service).
+2. **Document Loader** — text-layer PDFs via `pdfplumber`; DOCX via `python-docx`; TXT via plain `open()`/read; EML via Python's `email` stdlib; images/scans via `pytesseract`. All four text formats shown in the screenshot (**PDF, DOCX, TXT, EML**) are supported. This matches the video's "Extracting tabular data via OCR…" status line — surface that same kind of live status to the frontend via Server-Sent Events (SSE), which FastAPI supports natively for free (no extra service).
 3. **Entity Extractor** — one Groq call to `gemma2-9b-it` with a prompt that returns **strict JSON** matching your Pydantic `ComplaintExtraction` model (use Groq's JSON-mode / function-calling if available, or a "return only JSON" instruction + `json.loads` with a retry-on-parse-failure loop — don't trust free-form parsing).
 4. **Validator** — pure code, no LLM: required fields present? manufacturing date < expiry date? quantity is numeric+unit? Anything missing stays `"Awaiting AI extraction…"` in the UI rather than being hallucinated.
 5. **Description Synthesizer** — a second, smaller LLM call that turns the raw complaint text into the formal paragraph seen in the demo ("Apollo Pharmacy reported 12 discolored capsules in a sealed bottle. Requesting investigation and replacement.").
@@ -217,17 +219,60 @@ Each phase lists its goal, what you touch, and — per the brief's own framing �
 - Implement Completeness Checker, Duplicate Detection (pgvector), and Complaint Summary per Section 6.
 - **Output:** each bonus feature has its own visible UI surface (a checklist, a "similar complaints" list, a one-line summary chip) — don't bury them in logs only you can see.
 
-### Phase 7 — Commit flow, polish, and testing (1 day)
-- Implement "Commit to QMS Ledger": locks the record (`status = committed`, `committed_at` set), makes it read-only/append-only going forward.
+### Phase 7 — Commit flow, polish, and testing (1–1.5 days)
+
+#### 7a. "Commit to QMS Ledger" — detailed implementation
+
+The commit flow is the final user-triggered action that transitions a complaint from editable draft to immutable record. This is *not* a simple save — it's a deliberate "ledger" metaphor consistent with real QMS behavior (21 CFR 211.198 requires complaint records to be auditable and tamper-evident).
+
+**Backend endpoint: `PATCH /complaints/{id}/commit`**
+1. **Pre-commit validation** — reject if any QMS-required field is still empty (ties into the Completeness Checker bonus feature). Return a structured error listing missing fields so the frontend can highlight them.
+2. **Status transition** — set `status = 'committed'` and `committed_at = now()`.
+3. **Severity finalization** — copy `severity_suggested` → `severity_final` if the user hasn't manually overridden it.
+4. **Audit trail** — write an `audit_log` row: `actor='user', field_name='status', old_value='ready_to_commit', new_value='committed'`.
+5. **Return** the locked complaint record.
+
+**Enforcement on all subsequent endpoints:**
+- `PATCH /complaints/{id}` — reject with `403 Forbidden` if `status = 'committed'` ("Committed complaints cannot be modified").
+- `POST /copilot/chat` — reject corrections for committed complaints with a message: "This complaint has been committed to the QMS ledger and can no longer be modified."
+- Only `GET` and `audit_log` append operations remain valid post-commit.
+
+**Frontend behavior after commit:**
+- All form fields become `disabled` / `readOnly`.
+- `StatusBadge` flips to blue **"Committed"**.
+- "Commit to QMS Ledger" button is replaced with a timestamp display: *"Committed on Sep 11, 2026 at 2:30 PM"*.
+- Chat input area shows a locked-state message: *"This complaint has been committed to the QMS ledger."*
+- A subtle success toast/notification confirms the commit action.
+
+**Why "Commit to QMS Ledger" instead of "Save Complaint":** The screenshot shows "Save Complaint" but the video uses the "Commit" metaphor. We choose **"Commit to QMS Ledger"** because: (a) it signals immutability — the user understands this is a one-way action, (b) it aligns with real QMS practice where complaint records are ledgered for regulatory inspection, (c) it demonstrates **product thinking** — one of the four grading criteria.
+
+#### 7b. Testing and polish
 - Basic tests: a handful of `pytest` cases around the Validator and Correction Node diffing logic (cheap, and directly demonstrates "clean code" to reviewers).
+- Test the commit endpoint: verify 403 on post-commit edits, verify audit_log row is written.
 - Visual QA pass against the design spec in Section 8 (spacing, focus states, empty/loading/error states).
 - **Output:** the full happy path — paste or upload → review/correct → commit — works without console errors, on a fresh browser profile.
 
 ### Phase 8 — Deployment & submission (0.5–1 day)
 - Deploy backend (Render/Railway/Fly free tier) + frontend (Vercel/Netlify) + Postgres (Neon/Supabase free tier).
-- Record the two required videos: (1) feature walkthrough, (2) code walkthrough following the exact path the brief specifies — frontend input → API endpoint → LangGraph nodes → form/risk-assessment population.
 - Write the README (setup steps, architecture diagram, env vars, what's implemented vs bonus).
-- **Output:** submission form filled out with GitHub repo + both videos.
+
+#### 8a. Video 1 — Working Demonstration (target: 5–7 min)
+Per the brief: *"Working demonstration of all implemented AI tools and frontend features."*
+- Walk through the complete happy path: open the app → paste complaint text → watch fields auto-populate → show the AI Risk Assessment panel → demonstrate a conversational correction ("the batch number is actually X") → show the field update + audit confirmation → commit to QMS ledger → show the locked state.
+- Repeat with a file upload (drop a fabricated PDF) → show the extraction progress bar → fields populate.
+- Demonstrate each bonus feature with its own visible UI surface (completeness checklist, duplicate detection results, summary chip).
+
+#### 8b. Video 2 — Code Walkthrough (target: 5–7 min)
+Per the brief: *"Demonstrate and explain the code by walking through the complete end-to-end workflow, starting from the user's input (prompt or PDF/email upload) in the frontend, showing the relevant frontend code, API endpoints, backend processing, AI/LangGraph workflow, and finally how the response populates the Log Customer Complaint form and AI Copilot Risk Assessment."*
+- Start at the React component handling user input (dropzone / paste modal / chat input).
+- Show the Redux slice dispatching the API call.
+- Show the FastAPI endpoint receiving the request.
+- Walk through each LangGraph node in order: Router → Document Loader → Entity Extractor → Validator → Description Synthesizer → Risk Assessor.
+- Show the SSE stream returning data to the frontend.
+- Show the Redux state updating and form fields populating with the animated highlight.
+- End at the Commit endpoint and audit_log write.
+
+- **Output:** submission form filled out with GitHub repo + both videos (2 separate recordings).
 
 **Total: roughly 8–11 working days**, compressible if you cut to 1–2 bonus features instead of 3.
 
@@ -265,25 +310,31 @@ A consistent design system, built to be dropped straight into Figma as styles + 
 
 **Spacing & grid:** 8pt base scale (4/8/12/16/24/32). Two-pane layout: left form pane ~60% width, right copilot pane ~40%, 24px gutter, both panes independently scrollable, 12px corner radius on cards, 1px `neutral/200` borders (no heavy shadows — matches the flat, clinical tone appropriate for a QA tool).
 
-**Core components to build in Figma:**
-1. `SectionCard` — numbered header + field grid (2-column on desktop, 1-column responsive).
-2. `TextField` / `SelectField` / `DateField` — default, focused, filled, and **"Awaiting AI extraction…"** placeholder state (italic, `neutral/500`).
+**Core components to build:**
+1. `SectionCard` — numbered header + field grid (2-column on desktop, 1-column responsive). Section labels: **1. Origin & Customer Details**, **2. Product & Batch Identification**, **3. Complaint Details**, **4. Initial Assessment & Priority**.
+2. `TextField` / `SelectField` / `DateField` — default, focused, filled, and **"Awaiting AI extraction…"** placeholder state (italic, `neutral/500`). For `Quantity Affected`, include an inline **unit suffix** (e.g., "kg", "capsules") displayed as a gray label on the right side of the input, matching the screenshot.
 3. `StatusBadge` — variants: Pending Triage / Ready to Commit / Committed.
 4. `SeverityChip` — variants: Critical / Major / Minor.
 5. `ChatBubble` — user (right-aligned, `primary/600` fill, white text) vs assistant (left-aligned, `neutral/50` fill, avatar icon).
-6. `Dropzone` — idle / drag-over / file-attached states.
-7. `ProgressBar` — determinate, with percentage label (from the screenshot's "10%" extraction indicator).
-8. `AIAssessmentCard` — the nested purple-tinted card holding Severity/Next Action/Risk rationale, visually distinct from user-entered fields so it's clear it's a suggestion.
-9. `PrimaryButton` (`Commit to QMS Ledger`) / `SecondaryButton` (`Reset Form`).
+6. `Dropzone` — idle / drag-over / file-attached states. Includes "Drag & drop complaint document here or click to browse" copy.
+7. `PasteTextModal` — a **dedicated button** labeled **"Paste Complaint Text / Email"** (with clipboard icon) displayed below the dropzone, separated by an **"OR" divider line**. Clicking opens a modal/expanded text area for direct text input. This is a separate intake path from the chat input.
+8. `FormatInfoBox` — blue-tinted info card below the paste button: "Supported formats: PDF, DOCX, TXT, EML — Max file size: 10MB". Uses an info (ℹ) icon, `primary/50` background, `primary/600` text.
+9. `ProgressBar` — determinate, with percentage label (from the screenshot's "10%" extraction indicator). Labeled **"EXTRACTION PROGRESS"** in uppercase section style.
+10. `ChatBubble` — (same as #5, listed in the AI Assistant section context).
+11. `AIAssessmentCard` — the nested purple-tinted card holding Severity/Next Action/Risk rationale, visually distinct from user-entered fields so it's clear it's a suggestion.
+12. `PrimaryButton` (`Commit to QMS Ledger`) / `SecondaryButton` (`Reset Form`). Reset Form behavior: clears all form fields back to "Awaiting AI extraction…" state, resets status badge to "Pending Triage", clears chat history, and shows a confirmation dialog before executing ("Are you sure? This will clear all extracted data.").
+13. `BetaBadge` — a small red/coral pill badge labeled **"BETA"** displayed next to the "AI Complaint Intake Assistant" title in the copilot panel header.
+14. `AIDisclaimer` — fixed text below the chat input: *"AI responses may contain errors. Please verify information."* in `neutral/500`, 12px. This is a responsible-AI signal and aligns with the brief's "product thinking" grading criterion.
 
 **Screens to design:**
-1. Empty state (all fields "Awaiting AI extraction…", badge = Pending Triage).
-2. Mid-processing state (progress bar + "Analyzing document…" copilot message).
-3. Populated / Ready to Commit state (all fields filled, AI Assessment card visible, badge = green).
-4. Correction-in-progress state (chat showing a user correction + assistant confirmation, one field highlighted as just-updated).
-5. Committed state (form read-only/locked, badge = blue "Committed").
+1. Empty state (all fields "Awaiting AI extraction…", badge = Pending Triage, copilot panel shows dropzone + paste button + welcome message).
+2. Paste-text modal open (overlay/expanded text area for pasting complaint text directly).
+3. Mid-processing state (progress bar at partial %, "Analyzing document…" copilot message, fields still showing placeholders).
+4. Populated / Ready to Commit state (all fields filled, AI Assessment card visible, badge = green).
+5. Correction-in-progress state (chat showing a user correction + assistant confirmation, one field highlighted as just-updated).
+6. Committed state (form read-only/locked, badge = blue "Committed", commit timestamp displayed, chat input disabled).
 
-**Accessibility notes:** all status/severity color pairs above meet 4.5:1 text contrast on their tinted backgrounds; never rely on color alone for severity — always pair the chip with its text label (already true in the reference UI); dropzone and buttons need visible keyboard focus rings (`2px primary/600 outline`).
+**Accessibility notes:** all status/severity color pairs above meet 4.5:1 text contrast on their tinted backgrounds; never rely on color alone for severity — always pair the chip with its text label (already true in the reference UI); dropzone and buttons need visible keyboard focus rings (`2px primary/600 outline`). The `AIDisclaimer` text must always be visible (not hidden behind a scroll) — it should be sticky/fixed at the bottom of the copilot panel. The `PasteTextModal` must be keyboard-accessible (Escape to close, focus trap while open). The `Dropzone` must announce file acceptance/rejection to screen readers via `aria-live`.
 
 ---
 
@@ -297,6 +348,29 @@ The brief says it values *curiosity, clean code, product thinking, and problem-s
 
 ---
 
-## What I can do next
+## 10. Implementation Status
 
-This document is a complete spec — you (or a designer) could build the Figma file from Section 8 directly. Since you have Figma connected here, I can also **generate an actual Figma file** with these screens and components live right now, if you'd like — just say the word and which of your Figma teams/drafts folder to put it in.
+*Updated automatically as phases are completed.*
+
+| Phase | Description | Status | Completed |
+|---|---|---|---|
+| **Phase 0** | Setup & Scaffold — conda env, Vite+React frontend, FastAPI backend, `.env.example`, all deps installed | ✅ Done | 2026-09-11 |
+| **Phase 1** | Data Layer & API Skeleton — Complaint/AuditLog/ChatMessage ORM models, Alembic, CRUD endpoints + commit endpoint | ✅ Done | 2026-09-11 |
+| **Phase 2** | Frontend Shell — two-pane layout, all SRS §8 design tokens, Redux slices, all UI components (SectionCard, FormFields, StatusBadge, ChatBubble, Dropzone, PasteTextModal, ProgressBar, AIAssessmentCard) | ✅ Done | 2026-09-11 |
+| **Phase 3** | Core LangGraph Pipeline (text intake) — Router → Entity Extractor → Validator → Description Synthesizer → Risk Assessor, SSE streaming | 🔄 Next | — |
+| **Phase 4** | Document Ingestion — pdfplumber/docx/eml/pytesseract, multipart upload | ⏳ Pending | — |
+| **Phase 5** | Conversational Correction Loop — Correction Node, /copilot/chat, audit trail | ⏳ Pending | — |
+| **Phase 6** | Bonus Features — Completeness Checker, Duplicate Detection, Complaint Summary | ⏳ Pending | — |
+| **Phase 7** | Commit Flow, Polish, Testing — pytest, visual QA, field-fill animation | ⏳ Pending | — |
+| **Phase 8** | Deployment — Render + Vercel + Neon, README | ⏳ Pending | — |
+
+### Implementation Notes & Deviations
+
+- **Database**: Using **Supabase** (hosted PostgreSQL) instead of Docker Compose, as requested.
+- **Package manager**: Using **conda** virtual env + pip (instead of Poetry), as requested.
+- **Pharma-specific fields**: `originating_site_block` and `impacted_npm` **included** in Section 3 (Complaint Details) as optional sub-fields, matching the SRS data model.
+- **Commit ID format**: `CC-YYYY-NNNNN` (e.g., `CC-2026-00154`) generated at complaint creation.
+- **Frontend build**: Vite 8.3 / React 19 / Redux Toolkit 2.x. Builds clean in 153ms with 0 TypeScript errors.
+- **Backend**: FastAPI 0.141 + SQLAlchemy 2.0 async + LangGraph 1.2. App imports verified clean.
+
+---

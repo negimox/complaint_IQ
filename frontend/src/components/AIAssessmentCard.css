@@ -1,0 +1,83 @@
+.ai-assessment-card {
+  background: linear-gradient(135deg, #F5F3FF 0%, #EDE9FE 100%);
+  border: 1px solid #DDD6FE;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.ai-assessment-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px var(--space-4);
+  border-bottom: 1px solid #DDD6FE;
+  background: rgba(109, 40, 217, 0.05);
+}
+
+.ai-assessment-card__title {
+  color: #5B21B6;
+}
+
+.ai-assessment-card__hint {
+  color: #7C3AED;
+  font-style: italic;
+}
+
+.ai-assessment-card__body {
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.ai-assessment-card__row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ai-assessment-card__field-label {
+  color: #5B21B6;
+}
+
+.ai-assessment-card__value {
+  color: var(--color-neutral-700);
+  line-height: 1.6;
+  font-size: 13px;
+}
+
+/* Severity select styled per level */
+.ai-assessment-card__severity-select {
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid #DDD6FE;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  width: fit-content;
+  appearance: none;
+}
+
+.severity-select--critical {
+  background: var(--color-severity-critical-bg);
+  color: var(--color-severity-critical);
+  border-color: #FECACA;
+}
+
+.severity-select--major {
+  background: var(--color-severity-major-bg);
+  color: var(--color-severity-major);
+  border-color: #FED7AA;
+}
+
+.severity-select--minor {
+  background: var(--color-severity-minor-bg);
+  color: #A16207;
+  border-color: #FEF08A;
+}
+
+.severity-select--not-assessed {
+  background: var(--color-neutral-100);
+  color: var(--color-neutral-500);
+}

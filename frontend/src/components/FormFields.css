@@ -1,0 +1,84 @@
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  border-radius: var(--radius-sm);
+  transition: background-color 0.3s;
+}
+
+.form-field__label {
+  display: block;
+  margin-bottom: 2px;
+}
+
+.form-field__input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--color-neutral-200);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--color-neutral-900);
+  background: #fff;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.form-field__input::placeholder,
+.form-field__input--empty {
+  color: var(--color-neutral-400);
+  font-style: italic;
+}
+
+.form-field__input:focus {
+  outline: none;
+  border-color: var(--color-primary-600);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.form-field__input:disabled {
+  background: var(--color-neutral-50);
+  color: var(--color-neutral-500);
+  cursor: not-allowed;
+  border-color: var(--color-neutral-200);
+}
+
+textarea.form-field__input {
+  resize: vertical;
+  min-height: 80px;
+  line-height: 1.5;
+}
+
+/* Select */
+.form-field__select {
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 32px;
+}
+
+.form-field__select--empty {
+  color: var(--color-neutral-400);
+  font-style: italic;
+}
+
+/* Quantity with unit suffix */
+.form-field__quantity-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.form-field__quantity-wrapper .form-field__input {
+  padding-right: 52px;
+}
+
+.form-field__unit-suffix {
+  position: absolute;
+  right: 12px;
+  color: var(--color-neutral-400);
+  pointer-events: none;
+  white-space: nowrap;
+}

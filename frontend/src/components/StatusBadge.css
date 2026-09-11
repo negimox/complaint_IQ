@@ -1,0 +1,43 @@
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 99px;
+  border: 1px solid;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+}
+
+.status-badge__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Pending Triage — amber */
+.status-badge--amber {
+  background: var(--color-status-amber-bg);
+  color: var(--color-status-amber-text);
+  border-color: #FDE68A;
+}
+.status-badge--amber .status-badge__dot { background: var(--color-status-amber); }
+
+/* Ready to Commit — green */
+.status-badge--green {
+  background: var(--color-status-green-bg);
+  color: var(--color-status-green-text);
+  border-color: #A7F3D0;
+}
+.status-badge--green .status-badge__dot { background: var(--color-status-green); }
+
+/* Committed — blue */
+.status-badge--blue {
+  background: var(--color-status-blue-bg);
+  color: var(--color-status-blue-text);
+  border-color: #BFDBFE;
+}
+.status-badge--blue .status-badge__dot { background: var(--color-status-blue); }

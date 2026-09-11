@@ -1,0 +1,107 @@
+.dropzone {
+  border: 1.5px dashed var(--color-neutral-300);
+  border-radius: var(--radius-md);
+  padding: var(--space-6);
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s, background-color 0.15s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  background: #fff;
+}
+
+.dropzone:hover:not(.dropzone--disabled) {
+  border-color: var(--color-primary-600);
+  background: var(--color-primary-50);
+}
+
+.dropzone--drag-over {
+  border-color: var(--color-primary-600);
+  background: var(--color-primary-50);
+  border-style: solid;
+}
+
+.dropzone--disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.dropzone__icon {
+  color: var(--color-neutral-400);
+}
+
+.dropzone--drag-over .dropzone__icon {
+  color: var(--color-primary-600);
+}
+
+.dropzone__text {
+  color: var(--color-neutral-700);
+  font-size: 13px;
+}
+
+.dropzone__link {
+  font-size: 13px;
+  color: var(--color-neutral-500);
+}
+
+.dropzone__link-text {
+  color: var(--color-primary-600);
+  font-weight: 500;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  transition: text-decoration-color 0.15s;
+}
+
+.dropzone:hover .dropzone__link-text {
+  text-decoration-color: var(--color-primary-600);
+}
+
+.dropzone__error {
+  color: var(--color-severity-critical);
+  margin-top: var(--space-1);
+}
+
+/* File-attached state */
+.dropzone--file-attached {
+  border-style: solid;
+  border-color: var(--color-status-green);
+  background: var(--color-status-green-bg);
+  flex-direction: row;
+  justify-content: flex-start;
+  padding: var(--space-3) var(--space-4);
+  cursor: default;
+}
+
+.dropzone__file-icon {
+  color: var(--color-status-green);
+  flex-shrink: 0;
+}
+
+.dropzone__file-name {
+  flex: 1;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  color: var(--color-status-green-text);
+}
+
+.dropzone__clear-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-neutral-500);
+  display: flex;
+  align-items: center;
+  padding: 4px;
+  border-radius: 4px;
+  transition: color 0.15s, background-color 0.15s;
+}
+
+.dropzone__clear-btn:hover {
+  color: var(--color-severity-critical);
+  background: var(--color-severity-critical-bg);
+}

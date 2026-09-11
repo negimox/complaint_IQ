@@ -1,0 +1,122 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* ── Color Tokens ─────────────────────────────────────────────────────────── */
+:root {
+  /* Primary */
+  --color-primary-600: #4F46E5;
+  --color-primary-500: #6366F1;
+  --color-primary-100: #E0E7FF;
+  --color-primary-50:  #EEF2FF;
+
+  /* Neutral */
+  --color-neutral-900: #111827;
+  --color-neutral-700: #374151;
+  --color-neutral-500: #6B7280;
+  --color-neutral-400: #9CA3AF;
+  --color-neutral-300: #D1D5DB;
+  --color-neutral-200: #E5E7EB;
+  --color-neutral-100: #F3F4F6;
+  --color-neutral-50:  #F9FAFB;
+
+  /* Status */
+  --color-status-amber:        #F59E0B;
+  --color-status-amber-bg:     #FFFBEB;
+  --color-status-amber-text:   #92400E;
+  --color-status-green:        #10B981;
+  --color-status-green-bg:     #ECFDF5;
+  --color-status-green-text:   #065F46;
+  --color-status-blue:         #3B82F6;
+  --color-status-blue-bg:      #EFF6FF;
+  --color-status-blue-text:    #1E40AF;
+
+  /* Severity */
+  --color-severity-critical:    #DC2626;
+  --color-severity-critical-bg: #FEF2F2;
+  --color-severity-major:       #F97316;
+  --color-severity-major-bg:    #FFF7ED;
+  --color-severity-minor:       #EAB308;
+  --color-severity-minor-bg:    #FEFCE8;
+
+  /* Spacing (8pt scale) */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  /* Border radius */
+  --radius-sm:  6px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+}
+
+/* ── Reset & Base ─────────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: var(--color-neutral-50);
+  color: var(--color-neutral-900);
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+/* ── Typography Scale ─────────────────────────────────────────────────────── */
+.text-h1     { font-size: 24px; font-weight: 600; color: var(--color-neutral-900); }
+.text-h2     { font-size: 18px; font-weight: 600; color: var(--color-neutral-900); }
+.text-label  { font-size: 13px; font-weight: 500; color: var(--color-neutral-700); }
+.text-body   { font-size: 14px; font-weight: 400; color: var(--color-neutral-700); }
+.text-small  { font-size: 12px; font-weight: 400; color: var(--color-neutral-500); }
+.text-badge  { font-size: 12px; font-weight: 600; }
+.text-section-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-neutral-500);
+}
+
+/* ── Scrollbar ────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar       { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-neutral-300); border-radius: 99px; }
+
+/* ── Focus ring ───────────────────────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--color-primary-600);
+  outline-offset: 2px;
+}
+
+/* ── Field highlight animation (AI fill) ──────────────────────────────────── */
+@keyframes fieldFill {
+  0%   { background-color: var(--color-primary-50); }
+  100% { background-color: transparent; }
+}
+
+.field-just-filled {
+  animation: fieldFill 1.5s ease-out forwards;
+}
+
+/* ── Fade-in for AI content ───────────────────────────────────────────────── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-in-up {
+  animation: fadeInUp 0.3s ease-out;
+}
