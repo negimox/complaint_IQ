@@ -2,7 +2,7 @@
 import json
 import uuid
 import logging
-from datetime import datetime
+from datetime import datetime, date
 from pathlib import Path
 from typing import Optional, Dict, Any
 
@@ -13,8 +13,9 @@ from sqlalchemy import select
 from app.core.database import AsyncSessionLocal
 from app.models.complaint import Complaint, AuditLog, ChatMessage
 from app.models.enums import ComplaintStatus, SeverityLevel, PriorityLevel, AuditActor, ChatRole
-from app.schemas.complaint import IngestTextRequest, ComplaintResponse
+from app.schemas.complaint import IngestTextRequest, ComplaintResponse, ChatRequest
 from app.agents.graph import stream_complaint_intake
+from app.agents.nodes.correction_node import execute_correction
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -287,3 +288,123 @@ async def ingest_complaint_text_sync(payload: IngestTextRequest):
         session_id=payload.session_id,
     )
     return complaint
+
+
+@router.post("/chat")
+async def copilot_chat(payload: ChatRequest):
+    """
+    Phase 5: Conversational Correction Loop.
+    Interprets follow-up chat messages, diffs fields against current complaint state,
+    patches the database record, records immutable audit_log rows, and confirms the change.
+    """
+    async with AsyncSessionLocal() as db:
+        # 1. Fetch complaint
+        query = select(Complaint).where(Complaint.id == payload.complaint_id)
+        result = await db.execute(query)
+        complaint = result.scalar_one_or_none()
+
+        if not complaint:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Complaint '{payload.complaint_id}' not found.",
+            )
+
+        # 2. Check immutability guard
+        if complaint.status == ComplaintStatus.committed:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Committed complaints cannot be modified per 21 CFR 211.198 audit rules.",
+            )
+
+        # 3. Log user message in chat_messages table
+        user_msg = ChatMessage(
+            complaint_id=complaint.id,
+            session_id=payload.session_id,
+            role=ChatRole.user,
+            content=payload.message,
+        )
+        db.add(user_msg)
+        await db.flush()
+
+        # 4. Extract current complaint dict with clean string values for enums and dates
+        valid_cols = {c.name for c in Complaint.__table__.columns}
+        current_data = {}
+        for c in valid_cols:
+            val = getattr(complaint, c)
+            if hasattr(val, "value"):
+                current_data[c] = val.value
+            elif hasattr(val, "isoformat"):
+                current_data[c] = val.isoformat()
+            else:
+                current_data[c] = val
+
+        # 5. Run correction node
+        correction_result = execute_correction(
+            current_complaint=current_data,
+            user_message=payload.message,
+        )
+
+        diffs = correction_result.get("diffs", [])
+        reply = correction_result.get("reply", "")
+        updated_fields = correction_result.get("updated_fields", {})
+
+        # 6. Apply diffs and record audit log entries
+        if correction_result.get("is_correction") and diffs:
+            for d in diffs:
+                field = d["field"]
+                new_val = d["new_value"]
+                old_val = d["old_value"]
+
+                # Convert / normalize field value for ORM
+                orm_val = new_val
+                if field in ["manufacturing_date", "expiry_date", "complaint_date"]:
+                    if isinstance(new_val, str) and new_val.strip():
+                        try:
+                            orm_val = datetime.strptime(new_val.strip(), "%Y-%m-%d").date()
+                        except ValueError:
+                            orm_val = None
+                    else:
+                        orm_val = None
+                elif field in ["severity_suggested", "severity_final"]:
+                    try:
+                        orm_val = SeverityLevel(new_val)
+                    except ValueError:
+                        pass
+                elif field == "priority":
+                    try:
+                        orm_val = PriorityLevel(new_val)
+                    except ValueError:
+                        pass
+
+                setattr(complaint, field, orm_val)
+
+                # Write audit trail row
+                audit_entry = AuditLog(
+                    complaint_id=complaint.id,
+                    actor=AuditActor.user,
+                    field_name=field,
+                    old_value=str(old_val) if old_val is not None else None,
+                    new_value=str(new_val) if new_val is not None else None,
+                    source_message=payload.message,
+                )
+                db.add(audit_entry)
+
+        # 7. Log assistant reply in chat_messages table
+        assistant_msg = ChatMessage(
+            complaint_id=complaint.id,
+            session_id=payload.session_id,
+            role=ChatRole.assistant,
+            content=reply,
+        )
+        db.add(assistant_msg)
+
+        await db.commit()
+        await db.refresh(complaint)
+
+        return {
+            "reply": reply,
+            "is_correction": correction_result.get("is_correction", False),
+            "diffs": diffs,
+            "updated_fields": updated_fields,
+            "complaint": ComplaintResponse.model_validate(complaint).model_dump(mode="json"),
+        }
