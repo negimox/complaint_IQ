@@ -27,10 +27,12 @@
 }
 
 .section-card__body {
-  padding: var(--space-6);
+  padding: 20px 24px;
+  padding: var(--space-5) var(--space-6);
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-4) var(--space-6);
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px 20px;
+  gap: var(--space-4) var(--space-5);
 }
 
 /* Full-width override for children that need to span both columns */
@@ -38,8 +40,17 @@
   grid-column: 1 / -1;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 768px) {
   .section-card__body {
+    padding: var(--space-4);
+    gap: var(--space-3);
+  }
+}
+
+@media (max-width: 600px) {
+  .section-card__body {
+    padding: var(--space-4);
     grid-template-columns: 1fr;
+    gap: var(--space-3);
   }
 }

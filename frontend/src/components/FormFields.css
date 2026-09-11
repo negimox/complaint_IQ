@@ -4,11 +4,23 @@
   gap: var(--space-1);
   border-radius: var(--radius-sm);
   transition: background-color 0.3s;
+  position: relative;
 }
 
 .form-field__label {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 4px;
   margin-bottom: 2px;
+  font-weight: 500;
+  color: var(--color-neutral-700);
+}
+
+.form-field__label-required {
+  color: var(--color-severity-critical, #DC2626);
+  font-weight: 700;
+  font-size: 13px;
+  line-height: 1;
 }
 
 .form-field__input {
@@ -20,7 +32,7 @@
   font-size: 14px;
   color: var(--color-neutral-900);
   background: #fff;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
   appearance: none;
   -webkit-appearance: none;
 }
@@ -34,7 +46,7 @@
 .form-field__input:focus {
   outline: none;
   border-color: var(--color-primary-600);
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
 }
 
 .form-field__input:disabled {
@@ -48,6 +60,53 @@ textarea.form-field__input {
   resize: vertical;
   min-height: 80px;
   line-height: 1.5;
+}
+
+/* ── Error States ────────────────────────────────────────────────────────── */
+.form-field--error .form-field__label {
+  color: var(--color-severity-critical, #DC2626);
+}
+
+.form-field__input--error {
+  border-color: #EF4444 !important;
+  background-color: #FEF2F2 !important;
+}
+
+.form-field__input--error:focus {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15) !important;
+}
+
+.form-field__error-text {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: #DC2626;
+  font-weight: 500;
+  margin-top: 2px;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.form-field__error-icon {
+  flex-shrink: 0;
+  color: #DC2626;
+}
+
+.form-field__helper-text {
+  font-size: 11px;
+  color: var(--color-neutral-500);
+  margin-top: 2px;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Select */
@@ -81,4 +140,5 @@ textarea.form-field__input {
   color: var(--color-neutral-400);
   pointer-events: none;
   white-space: nowrap;
+  font-weight: 500;
 }

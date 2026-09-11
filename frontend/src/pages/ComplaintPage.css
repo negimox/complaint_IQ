@@ -1,19 +1,39 @@
 .complaint-page {
   display: grid;
-  grid-template-columns: 60fr 40fr;
+  grid-template-columns: minmax(0, 1fr) clamp(380px, 30vw, 480px);
   height: 100vh;
+  height: 100dvh;
+  max-height: 100vh;
+  width: 100%;
   overflow: hidden;
 }
 
 /* ── Left: Form pane ────────────────────────────────────────────────────────── */
 .complaint-page__form-pane {
+  min-height: 0;
+  min-width: 0;
+  height: 100%;
+  max-height: 100vh;
+  max-height: 100dvh;
   overflow-y: auto;
-  padding: var(--space-6) var(--space-8);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
+  overflow-x: hidden;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-neutral-300) transparent;
+  padding: var(--space-6) var(--space-6);
+  padding: var(--space-6) clamp(var(--space-4), 3.5vw, var(--space-8));
   background: var(--color-neutral-50);
   border-right: 1px solid var(--color-neutral-200);
+}
+
+.form-pane-inner {
+  width: 100%;
+  max-width: 1060px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
 }
 
 .form-header {
@@ -72,6 +92,27 @@
   border-radius: var(--radius-md);
   font-size: 13px;
   font-weight: 500;
+}
+
+/* Commit error alert banner */
+.commit-error-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background: #FEF2F2;
+  color: #DC2626;
+  border: 1px solid #FCA5A5;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 500;
+  animation: shake 0.3s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
 }
 
 /* Action buttons row */
@@ -143,6 +184,11 @@
 
 /* ── Right: Copilot pane ─────────────────────────────────────────────────────── */
 .complaint-page__copilot-pane {
+  min-height: 0;
+  min-width: 0;
+  height: 100%;
+  max-height: 100vh;
+  max-height: 100dvh;
   display: flex;
   flex-direction: column;
   background: #fff;
@@ -180,12 +226,40 @@
 }
 
 .copilot-body {
-  flex: 1;
+  flex: 1 1 0;
+  min-height: 0;
   overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-neutral-300) transparent;
   padding: var(--space-4) var(--space-6);
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
+}
+
+/* Custom scrollbars */
+.complaint-page__form-pane::-webkit-scrollbar,
+.copilot-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.complaint-page__form-pane::-webkit-scrollbar-track,
+.copilot-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.complaint-page__form-pane::-webkit-scrollbar-thumb,
+.copilot-body::-webkit-scrollbar-thumb {
+  background: var(--color-neutral-300);
+  border-radius: 99px;
+}
+
+.complaint-page__form-pane::-webkit-scrollbar-thumb:hover,
+.copilot-body::-webkit-scrollbar-thumb:hover {
+  background: var(--color-neutral-400);
 }
 
 .format-info-box {
@@ -305,25 +379,59 @@
   font-size: 11px;
 }
 
-/* ── Responsive ──────────────────────────────────────────────────────────────── */
-@media (max-width: 1024px) {
+/* ── Responsive Scaling ──────────────────────────────────────────────────────── */
+
+/* Large desktop / 2K & 4K displays (> 1600px) */
+@media (min-width: 1600px) {
+  .complaint-page {
+    grid-template-columns: minmax(0, 1fr) 460px;
+  }
+  .form-pane-inner {
+    max-width: 1140px;
+  }
+}
+
+/* Standard desktop & laptops (1024px - 1599px) */
+@media (max-width: 1599px) and (min-width: 1024px) {
+  .complaint-page {
+    grid-template-columns: minmax(0, 1fr) clamp(380px, 32vw, 440px);
+  }
+}
+
+/* Compact landscape screens & large tablets (820px - 1023px) */
+@media (max-width: 1023px) and (min-width: 820px) {
+  .complaint-page {
+    grid-template-columns: minmax(0, 1fr) 360px;
+  }
+  .complaint-page__form-pane {
+    padding: var(--space-4) var(--space-5);
+  }
+  .copilot-body {
+    padding: var(--space-3) var(--space-4);
+  }
+}
+
+/* Small screens / portrait tablets (< 820px) */
+@media (max-width: 819px) {
   .complaint-page {
     grid-template-columns: 1fr;
-    grid-template-rows: auto auto;
-    height: auto;
-    overflow: visible;
+    grid-template-rows: minmax(0, 1fr) minmax(280px, 40vh);
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
   }
 
   .complaint-page__form-pane {
-    height: auto;
-    overflow: visible;
+    height: 100%;
+    min-height: 0;
+    overflow-y: auto;
     border-right: none;
-    border-bottom: 1px solid var(--color-neutral-200);
+    border-bottom: 2px solid var(--color-neutral-200);
     padding: var(--space-4);
   }
 
   .complaint-page__copilot-pane {
-    height: 600px;
-    overflow: hidden;
+    height: 100%;
+    min-height: 0;
   }
 }

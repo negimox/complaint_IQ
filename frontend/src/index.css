@@ -37,13 +37,19 @@
   --color-severity-minor:       #EAB308;
   --color-severity-minor-bg:    #FEFCE8;
 
-  /* Spacing (8pt scale) */
-  --space-1:  4px;
-  --space-2:  8px;
-  --space-3: 12px;
-  --space-4: 16px;
-  --space-6: 24px;
-  --space-8: 32px;
+  /* Spacing scale */
+  --space-0-5: 2px;
+  --space-1:   4px;
+  --space-1-5: 6px;
+  --space-2:   8px;
+  --space-3:   12px;
+  --space-4:   16px;
+  --space-5:   20px;
+  --space-6:   24px;
+  --space-8:   32px;
+  --space-10:  40px;
+  --space-12:  48px;
+  --space-16:  64px;
 
   /* Border radius */
   --radius-sm:  6px;
@@ -64,6 +70,7 @@
 
 html {
   font-size: 14px;
+  height: 100%;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -73,7 +80,17 @@ body {
   background-color: var(--color-neutral-50);
   color: var(--color-neutral-900);
   line-height: 1.5;
-  min-height: 100vh;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+#root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 /* ── Typography Scale ─────────────────────────────────────────────────────── */
