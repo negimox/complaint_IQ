@@ -89,6 +89,9 @@ const complaintFormSlice = createSlice({
           }
         });
         state.justFilledFields = new Set(filled);
+      } else {
+        state.current = action.payload as Complaint;
+        state.justFilledFields = new Set(Object.keys(action.payload));
       }
     },
   },

@@ -6,7 +6,9 @@ from app.core.config import settings
 # Convert postgresql:// → postgresql+asyncpg:// for async driver
 def _make_async_url(url: str) -> str:
     if url.startswith("postgresql://"):
-        return url.replace("postgresql://", "postgresql+asyncpg://", 1)
+        url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    if "sslmode=" in url:
+        url = url.replace("sslmode=", "ssl=")
     return url
 
 

@@ -76,6 +76,9 @@ export function SelectField({
         onChange={(e) => onChange?.(e.target.value)}
       >
         <option value="" disabled>Awaiting AI extraction…</option>
+        {value && !options.some((opt) => opt.value === value) && (
+          <option value={value}>{value}</option>
+        )}
         {options.map((opt) => (
           <option key={opt.value} value={opt.value}>{opt.label}</option>
         ))}

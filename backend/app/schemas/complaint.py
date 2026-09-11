@@ -11,9 +11,26 @@ from app.models.enums import (
 # ── Complaint Schemas ──────────────────────────────────────────────────────────
 
 class ComplaintCreate(BaseModel):
-    """Used when creating a blank draft complaint."""
+    """Used when creating a draft complaint."""
     complaint_source: Optional[str] = None
     customer_name: Optional[str] = None
+    product_name: Optional[str] = None
+    product_strength_grade: Optional[str] = None
+    batch_lot_number: Optional[str] = None
+    manufacturing_date: Optional[date] = None
+    expiry_date: Optional[date] = None
+    affected_quantity: Optional[str] = None
+    originating_site_block: Optional[str] = None
+    impacted_npm: Optional[str] = None
+    complaint_category: Optional[str] = None
+    complaint_date: Optional[date] = None
+    complaint_description: Optional[str] = None
+    severity_suggested: Optional[SeverityLevel] = None
+    severity_final: Optional[SeverityLevel] = None
+    priority: Optional[PriorityLevel] = None
+    suggested_next_action: Optional[str] = None
+    initial_risk_assessment: Optional[str] = None
+    raw_source_text: Optional[str] = None
 
 
 class ComplaintUpdate(BaseModel):

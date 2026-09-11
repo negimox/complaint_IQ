@@ -9,8 +9,16 @@ import {
   setFieldLocally,
   commitComplaint,
   patchComplaint,
+  applyAIExtraction,
+  clearFilledFields,
 } from '../store/complaintFormSlice';
-import { resetChat, addUserMessage } from '../store/copilotChatSlice';
+import {
+  resetChat,
+  addUserMessage,
+  addAssistantMessage,
+  setExtractionStatus,
+  setProcessing,
+} from '../store/copilotChatSlice';
 
 import SectionCard from '../components/SectionCard';
 import { TextField, SelectField, DateField, QuantityField } from '../components/FormFields';
@@ -33,13 +41,19 @@ const COMPLAINT_SOURCE_OPTIONS = [
 ];
 
 const CATEGORY_OPTIONS = [
-  { value: 'Contamination', label: 'Contamination' },
   { value: 'Discoloration', label: 'Discoloration' },
+  { value: 'Foreign Matter / Contamination', label: 'Foreign Matter / Contamination' },
+  { value: 'Contamination', label: 'Contamination' },
+  { value: 'Packaging Defect', label: 'Packaging Defect' },
   { value: 'Packaging', label: 'Packaging' },
+  { value: 'Labeling Defect', label: 'Labeling Defect' },
   { value: 'Labeling', label: 'Labeling' },
+  { value: 'Subpotency / Efficacy', label: 'Subpotency / Efficacy' },
   { value: 'Efficacy', label: 'Efficacy' },
   { value: 'Sterility', label: 'Sterility' },
-  { value: 'Foreign Matter', label: 'Foreign Matter' },
+  { value: 'Dissolution / Physical', label: 'Dissolution / Physical' },
+  { value: 'Adverse Event', label: 'Adverse Event' },
+  { value: 'Damaged Goods', label: 'Damaged Goods' },
   { value: 'Other', label: 'Other' },
 ];
 
@@ -80,16 +94,257 @@ export default function ComplaintPage() {
     dispatch(patchComplaint({ id: complaint.id, updates: { [field]: (complaint as any)[field] } }));
   };
 
-  const handlePasteText = (text: string) => {
-    // Phase 3: will call /copilot/ingest — for now logs intent
-    dispatch(addUserMessage(`[Paste] ${text.slice(0, 120)}…`));
-    console.log('[Phase 3] Will send to /copilot/ingest:', text);
+  const handlePasteText = async (text: string) => {
+    dispatch(addUserMessage(`[Intake Text Submitted]: "${text.slice(0, 90)}..."`));
+    dispatch(setProcessing(true));
+    dispatch(
+      setExtractionStatus({
+        status: 'uploading',
+        progress: 10,
+        label: 'Initiating ComplaintIQ intake pipeline...',
+      })
+    );
+
+    try {
+      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+      const response = await fetch(`${baseUrl}/copilot/ingest`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'text/event-stream',
+        },
+        body: JSON.stringify({
+          text,
+          complaint_id: complaint?.id || null,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Server returned HTTP ${response.status}`);
+      }
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder('utf-8');
+      let buffer = '';
+
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (trimmed.startsWith('data:')) {
+              const dataStr = trimmed.slice(5).trim();
+              if (!dataStr) continue;
+              try {
+                const event = JSON.parse(dataStr);
+                const progress = event.progress ?? 50;
+                const message = event.status_message ?? '';
+                const step = event.step ?? '';
+
+                if (step === 'risk_assessor' || progress === 100 || event.complaint) {
+                  dispatch(
+                    setExtractionStatus({
+                      status: 'complete',
+                      progress: 100,
+                      label: message || 'Extraction complete.',
+                    })
+                  );
+                  if (event.complaint) {
+                    dispatch(applyAIExtraction(event.complaint));
+                    setTimeout(() => {
+                      dispatch(clearFilledFields());
+                    }, 2500);
+                  }
+                  const prod = event.complaint?.product_name || 'the product';
+                  const lot = event.complaint?.batch_lot_number || 'N/A';
+                  const sev = event.complaint?.severity_suggested || 'Major';
+                  const cat = event.complaint?.complaint_category || 'General';
+                  dispatch(
+                    addAssistantMessage(
+                      `Complaint details extracted and validated for ${prod} (Batch ${lot}). Categorized as "${cat}" with suggested severity "${sev}". Form is populated and ready for QA review.`
+                    )
+                  );
+                } else {
+                  dispatch(
+                    setExtractionStatus({
+                      status: 'processing',
+                      progress,
+                      label: message,
+                    })
+                  );
+                }
+              } catch (parseErr) {
+                console.warn('Error parsing SSE event chunk:', parseErr);
+              }
+            }
+          }
+        }
+      }
+    } catch (err: any) {
+      console.error('Extraction intake error:', err);
+      dispatch(
+        setExtractionStatus({
+          status: 'idle',
+          progress: 0,
+          label: 'Extraction failed',
+        })
+      );
+      dispatch(
+        addAssistantMessage(
+          `Unable to complete extraction: ${err.message || 'Network error'}. Please verify connection and try again.`
+        )
+      );
+    } finally {
+      dispatch(setProcessing(false));
+    }
   };
 
-  const handleFileDrop = (file: File) => {
+  const handleFileDrop = async (file: File) => {
     setActiveFile(file);
-    // Phase 4: will POST multipart/form-data to /copilot/ingest
-    console.log('[Phase 4] Will upload file:', file.name);
+    dispatch(
+      addUserMessage(
+        `📁 Attached document: "${file.name}" (${(file.size / 1024).toFixed(1)} KB)`
+      )
+    );
+    dispatch(setProcessing(true));
+    dispatch(
+      setExtractionStatus({
+        status: 'uploading',
+        progress: 10,
+        label: `Uploading '${file.name}' to Document Ingestion pipeline...`,
+      })
+    );
+
+    try {
+      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+      const formData = new FormData();
+      formData.append('file', file);
+      if (complaint?.id) {
+        formData.append('complaint_id', complaint.id);
+      }
+
+      const response = await fetch(`${baseUrl}/copilot/ingest`, {
+        method: 'POST',
+        headers: {
+          Accept: 'text/event-stream',
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Server returned HTTP ${response.status}`);
+      }
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder('utf-8');
+      let buffer = '';
+
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (trimmed.startsWith('data:')) {
+              const dataStr = trimmed.slice(5).trim();
+              if (!dataStr) continue;
+              try {
+                const event = JSON.parse(dataStr);
+                const progress = event.progress ?? 50;
+                const message = event.status_message ?? '';
+                const step = event.step ?? '';
+
+                if (step === 'risk_assessor' || progress === 100 || event.complaint) {
+                  dispatch(
+                    setExtractionStatus({
+                      status: 'complete',
+                      progress: 100,
+                      label: message || 'Document extraction complete.',
+                    })
+                  );
+                  if (event.complaint) {
+                    dispatch(applyAIExtraction(event.complaint));
+                    setTimeout(() => {
+                      dispatch(clearFilledFields());
+                    }, 2500);
+                  }
+                  const prod = event.complaint?.product_name || 'the product';
+                  const lot = event.complaint?.batch_lot_number || 'N/A';
+                  const sev = event.complaint?.severity_suggested || 'Major';
+                  const cat = event.complaint?.complaint_category || 'General';
+                  dispatch(
+                    addAssistantMessage(
+                      `Successfully ingested document "${file.name}". Extracted complaint for ${prod} (Batch ${lot}), categorized as "${cat}" with suggested severity "${sev}". Form is populated and ready for review.`
+                    )
+                  );
+                } else if (step === 'document_loader') {
+                  dispatch(
+                    setExtractionStatus({
+                      status: 'extracting',
+                      progress,
+                      label: message || `Parsing document structure & tables from ${file.name}...`,
+                    })
+                  );
+                } else if (step === 'validator') {
+                  dispatch(
+                    setExtractionStatus({
+                      status: 'validating',
+                      progress,
+                      label: message,
+                    })
+                  );
+                } else if (step === 'risk_assessor') {
+                  dispatch(
+                    setExtractionStatus({
+                      status: 'assessing',
+                      progress,
+                      label: message,
+                    })
+                  );
+                } else {
+                  dispatch(
+                    setExtractionStatus({
+                      status: 'processing',
+                      progress,
+                      label: message,
+                    })
+                  );
+                }
+              } catch (parseErr) {
+                console.warn('Error parsing SSE event chunk:', parseErr);
+              }
+            }
+          }
+        }
+      }
+    } catch (err: any) {
+      console.error('File ingestion error:', err);
+      dispatch(
+        setExtractionStatus({
+          status: 'idle',
+          progress: 0,
+          label: 'Document extraction failed',
+        })
+      );
+      dispatch(
+        addAssistantMessage(
+          `Failed to process document "${file.name}": ${err.message || 'Network error'}. Please try again.`
+        )
+      );
+    } finally {
+      dispatch(setProcessing(false));
+    }
   };
 
   const handleSendChat = () => {

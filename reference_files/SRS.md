@@ -357,20 +357,25 @@ The brief says it values *curiosity, clean code, product thinking, and problem-s
 | **Phase 0** | Setup & Scaffold — conda env, Vite+React frontend, FastAPI backend, `.env.example`, all deps installed | ✅ Done | 2026-09-11 |
 | **Phase 1** | Data Layer & API Skeleton — Complaint/AuditLog/ChatMessage ORM models, Alembic, CRUD endpoints + commit endpoint | ✅ Done | 2026-09-11 |
 | **Phase 2** | Frontend Shell — two-pane layout, all SRS §8 design tokens, Redux slices, all UI components (SectionCard, FormFields, StatusBadge, ChatBubble, Dropzone, PasteTextModal, ProgressBar, AIAssessmentCard) | ✅ Done | 2026-09-11 |
-| **Phase 3** | Core LangGraph Pipeline (text intake) — Router → Entity Extractor → Validator → Description Synthesizer → Risk Assessor, SSE streaming | 🔄 Next | — |
-| **Phase 4** | Document Ingestion — pdfplumber/docx/eml/pytesseract, multipart upload | ⏳ Pending | — |
-| **Phase 5** | Conversational Correction Loop — Correction Node, /copilot/chat, audit trail | ⏳ Pending | — |
+| **Phase 3** | Core LangGraph Pipeline (text intake) — Router → Entity Extractor → Validator → Description Synthesizer → Risk Assessor, SSE streaming, DB persistence | ✅ Done | 2026-09-11 |
+| **Phase 4** | Document Ingestion — pdfplumber/docx/eml/pytesseract, multipart upload, table parsing, file persistence | ✅ Done | 2026-09-11 |
+| **Phase 5** | Conversational Correction Loop — Correction Node, /copilot/chat, audit trail | 🔄 Next | — |
 | **Phase 6** | Bonus Features — Completeness Checker, Duplicate Detection, Complaint Summary | ⏳ Pending | — |
 | **Phase 7** | Commit Flow, Polish, Testing — pytest, visual QA, field-fill animation | ⏳ Pending | — |
 | **Phase 8** | Deployment — Render + Vercel + Neon, README | ⏳ Pending | — |
 
 ### Implementation Notes & Deviations
 
-- **Database**: Using **Supabase** (hosted PostgreSQL) instead of Docker Compose, as requested.
+- **Database**: Using **Supabase** (hosted PostgreSQL). Alembic schema migration applied (`complaints`, `audit_log`, `chat_messages`). Connected through Supabase IPv4 connection pooler (`aws-0-ap-northeast-2.pooler.supabase.com`) with `ssl=require`.
+- **LLM Engine**: Groq with `openai/gpt-oss-20b` (fast extraction & synthesis) and `openai/gpt-oss-120b` (ICH Q9/Q10 risk & severity assessment) with JSON mode, replacing decommissioned `gemma2-9b-it` and `llama-3.3-70b-versatile`.
+- **LangGraph State Pipeline**: Full 6-node pipeline implemented (`router`, `document_loader`, `entity_extractor`, `validator`, `description_synthesizer`, `risk_assessor`) with conditional routing between file uploads and direct text intake.
+- **Document Loader**: Extracts structured text and embedded tables across PDF (`pdfplumber`), DOCX (`python-docx`), EML/MSG (`email` standard library), plain text, and image OCR fallback (`pytesseract`).
+- **File Upload & Staging**: Universal `POST /copilot/ingest` and `POST /copilot/upload` handling `multipart/form-data`, persisting uploaded files to `backend/uploads/` and recording `raw_source_file_path` on the complaint record in Supabase.
+- **Frontend Integration**: SSE streaming consumer in `handlePasteText` and `handleFileDrop`, dynamic progress bar, yellow highlight animation on populated fields, auto-status transition to "Ready to Commit", and automated assistant chat confirmation. Tested and verified end-to-end via browser automation.
 - **Package manager**: Using **conda** virtual env + pip (instead of Poetry), as requested.
 - **Pharma-specific fields**: `originating_site_block` and `impacted_npm` **included** in Section 3 (Complaint Details) as optional sub-fields, matching the SRS data model.
 - **Commit ID format**: `CC-YYYY-NNNNN` (e.g., `CC-2026-00154`) generated at complaint creation.
-- **Frontend build**: Vite 8.3 / React 19 / Redux Toolkit 2.x. Builds clean in 153ms with 0 TypeScript errors.
-- **Backend**: FastAPI 0.141 + SQLAlchemy 2.0 async + LangGraph 1.2. App imports verified clean.
+- **Frontend build**: Vite 8.3 / React 19 / Redux Toolkit 2.x. Builds clean with 0 TypeScript errors.
+- **Backend**: FastAPI 0.141 + SQLAlchemy 2.0 async + LangGraph 1.2 running live on port 8000.
 
 ---

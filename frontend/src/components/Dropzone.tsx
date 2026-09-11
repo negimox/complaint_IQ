@@ -15,6 +15,8 @@ const ACCEPTED_TYPES = {
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
   'text/plain': ['.txt'],
   'message/rfc822': ['.eml'],
+  'image/png': ['.png'],
+  'image/jpeg': ['.jpg', '.jpeg'],
 };
 
 export default function Dropzone({ onFileDrop, activeFile, onClearFile, disabled }: DropzoneProps) {

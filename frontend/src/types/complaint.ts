@@ -62,5 +62,6 @@ export type ExtractionStatus =
   | 'extracting'
   | 'validating'
   | 'assessing'
+  | 'processing'
   | 'complete'
   | 'error';

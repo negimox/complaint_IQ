@@ -8,8 +8,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
 
-# Import models so Alembic can detect them
-from app.core.database import Base
+from app.core.database import Base, _make_async_url
 from app.models import complaint  # noqa: F401 — registers ORM classes
 
 from app.core.config import settings
@@ -18,9 +17,7 @@ from app.core.config import settings
 config = context.config
 
 # Override sqlalchemy.url from our settings
-config.set_main_option("sqlalchemy.url", settings.database_url.replace(
-    "postgresql://", "postgresql+asyncpg://"
-))
+config.set_main_option("sqlalchemy.url", _make_async_url(settings.database_url))
 
 # Interpret config for Python logging
 if config.config_file_name is not None:

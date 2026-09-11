@@ -25,3 +25,17 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+#Cache
+*.pyc
+app/__pycache__
+.pytest_cache
+app/migrations/__pycache__
+app/models/__pycache__
+app/schemas/__pycache__
+app/agents/__pycache__
+app/api/__pycache__
+app/core/__pycache__
+.ipynb_checkpoints
+.ruff_cache
+uploads/
