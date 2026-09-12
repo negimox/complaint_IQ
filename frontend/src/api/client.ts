@@ -5,17 +5,24 @@ const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000';
 export const api = axios.create({
   baseURL: BASE_URL,
   headers: { 'Content-Type': 'application/json' },
-  timeout: 30_000,
+  timeout: 90_000, // 90s to accommodate cloud cold starts (e.g. Render free tier)
 });
 
 // Response interceptor — normalize and enrich error messages
 api.interceptors.response.use(
   (res) => res,
   (err) => {
+    if (err.code === 'ECONNABORTED' || err.message?.toLowerCase().includes('timeout')) {
+      return Promise.reject(
+        new Error(
+          `Request timed out connecting to ${BASE_URL}. If the backend is waking up from idle (e.g. Render free tier cold start), please wait 30-60 seconds and retry.`
+        )
+      );
+    }
     if (err.code === 'ERR_NETWORK' || !err.response) {
       return Promise.reject(
         new Error(
-          `Unable to connect to backend server at ${BASE_URL}. Please ensure the FastAPI server is running.`
+          `Unable to connect to backend server at ${BASE_URL}. Ensure the backend is active, healthy, and allowing CORS requests.`
         )
       );
     }

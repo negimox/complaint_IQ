@@ -32,9 +32,11 @@ app = FastAPI(
 )
 
 # ── CORS ──────────────────────────────────────────────────────────────────────
+# Allow configured origins + any Vercel domain (*.vercel.app) automatically
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.backend_cors_origins,
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -43,6 +45,17 @@ app.add_middleware(
 # ── Routers ───────────────────────────────────────────────────────────────────
 app.include_router(complaints.router, prefix="/complaints", tags=["complaints"])
 app.include_router(copilot.router, prefix="/copilot", tags=["copilot"])
+
+
+@app.get("/", tags=["health"])
+async def root():
+    return {
+        "status": "online",
+        "service": settings.app_name,
+        "environment": settings.environment,
+        "docs": "/docs",
+        "health": "/health",
+    }
 
 
 @app.get("/health", tags=["health"])
