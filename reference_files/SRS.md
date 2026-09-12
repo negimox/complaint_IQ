@@ -164,20 +164,35 @@ The `audit_log` table is small effort, high payoff: it's exactly the kind of "pr
 
 ---
 
-## 6. Bonus AI features — recommended subset
+## 6. Bonus AI features — chosen subset
 
-The brief lists six optional bonus features and says "additional AI features are highly appreciated" — but for an intern-scoped assignment, breadth beats depth only up to a point. Recommended priority order, each with a genuinely free approach:
+The brief lists six optional bonus features. After analytical review of domain value, implementation effort, and demo narration clarity, the following four features are selected for Phase 6. Each implements a distinct AI/ML technique and adds genuine QMS workflow value.
 
-| Feature | Free implementation approach | Effort |
-|---|---|---|
-| **Complaint Completeness Checker** | Pure validation logic (no LLM needed) — flag which QMS-required fields are still empty/low-confidence after extraction; surface as a checklist next to "Ready to Commit" | Low |
-| **AI Risk Classification** | Already covered by the Risk Assessor node — just expose the rationale text, don't build it twice | Already included |
-| **Duplicate Complaint Detection** | `sentence-transformers` embedding of `complaint_description` + `pgvector` cosine similarity search against existing rows; surface "3 similar complaints found" with links | Medium |
-| **Complaint Summary** | One more small LLM call — a one-line summary for a list/dashboard view, cheap to add once the Description Synthesizer exists | Low |
-| **CAPA Recommendation** | LLM node conditioned on `complaint_category` + `initial_risk_assessment`, prompted with a short rubric of typical CAPA types (retraining, process change, supplier audit, batch recall evaluation) | Medium |
-| **Root Cause Recommendation** | Hardest to do credibly without domain data — an LLM guess here reads as the least trustworthy of the six unless clearly labeled "AI suggestion, not a finding" | Higher risk/reward |
+| Feature | Implementation Approach | Effort | Status |
+|---|---|---|---|
+| **AI Risk Classification** | Already built as the `risk_assessor` node (ICH Q9 rubric, Critical/Major/Minor). No additional work needed — expose rationale text in UI. | — | ✅ Already done |
+| **Complaint Completeness Checker** | `SubmitChecklist` frontend component already built. Add backend `GET /complaints/{id}/completeness` endpoint to make the checklist server-authoritative. Rules-based, no LLM. | Low | 🔄 Finish |
+| **Duplicate Complaint Detection** | `sentence-transformers` (`all-MiniLM-L6-v2`) generates 384-dim embedding of `complaint_description`. Stored in `pgvector` column on the `complaints` table. `GET /complaints/{id}/duplicates` endpoint performs cosine similarity search (threshold ≥ 0.85) against committed complaints. Frontend `DuplicateAlertCard` surfaces top-5 matches with similarity score. | Medium | ⏳ Build |
+| **Complaint Summary** | Additional LLM call (inline in the `risk_assessor` node) generates a ≤25-word summary for list-view and dashboard rendering. Stored as `complaint_summary` column. Displayed as a subtitle chip in the complaint page header post-extraction. | Low | ⏳ Build |
+| **CAPA Recommendation** | LLM node conditioned on `complaint_category` + `severity_suggested` + `initial_risk_assessment`, prompted with a rubric of CAPA types: *Critical/Sterility/Foreign Matter → Batch recall evaluation + Immediate process CAPA; Major/Discoloration → OOS investigation + Supplier audit; Packaging → Line inspection + Supplier CoA review; Minor → Trend monitoring*. Output stored as `capa_recommendation`. Frontend `CAPARecommendationCard` (purple-tinted, inside Section 4) shows CAPA type, recommended actions, and a firm disclaimer: "AI recommendation — QA Director must initiate and own CAPA". | Medium | ⏳ Build |
 
-**Recommendation:** implement Completeness Checker + Duplicate Detection + Complaint Summary as your three bonus features. They're all genuinely free, demonstrate three different AI/ML techniques (rules, embeddings/vector search, generative summarization) rather than three LLM prompts that all look the same, and are easy to narrate clearly in a 5–10 minute video.
+**Features not included and rationale:**
+- **Root Cause Recommendation** — Without a corpus of historical investigation outcomes, LLM output is speculative and creates regulatory risk in a QMS demo. CAPA Recommendation (which maps complaint categories to well-known CAPA types) achieves similar narrative value with far greater defensibility. Deferred unless historical data becomes available.
+
+**Why this set demonstrates breadth of AI/ML technique:**
+- Rules engine (Completeness Checker)
+- Embeddings + vector search (Duplicate Detection)
+- Generative summarization (Complaint Summary)
+- LLM + domain rubric (CAPA Recommendation)
+- Deterministic risk scoring already in pipeline (AI Risk Classification)
+
+**Data model additions required for Phase 6:**
+```
+complaints (additions)
+├─ embedding          vector(384)     -- pgvector; NULL until duplicate-detection run
+├─ complaint_summary  varchar(300)    -- ≤25-word AI summary for list views
+├─ capa_recommendation text           -- AI-generated CAPA type + actions
+```
 
 ---
 
@@ -360,7 +375,7 @@ The brief says it values *curiosity, clean code, product thinking, and problem-s
 | **Phase 3** | Core LangGraph Pipeline (text intake) — Router → Entity Extractor → Validator → Description Synthesizer → Risk Assessor, SSE streaming, DB persistence | ✅ Done | 2026-09-11 |
 | **Phase 4** | Document Ingestion — pdfplumber/docx/eml/pytesseract, multipart upload, table parsing, file persistence | ✅ Done | 2026-09-11 |
 | **Phase 5** | Conversational Correction Loop — Correction Node, POST /copilot/chat, field diffing, immutable audit_log trail | ✅ Done | 2026-09-11 |
-| **Phase 6** | Bonus Features — Completeness Checker, Duplicate Detection, Complaint Summary | 🔄 Next | — |
+| **Phase 6** | Bonus Features — (1) Completeness Checker backend endpoint `GET /complaints/{id}/completeness`, (2) Duplicate Detection `GET /complaints/{id}/duplicates` (`pgvector` + `sentence-transformers` + `DuplicateAlertCard`), (3) Complaint Summary (LLM in `risk_assessor`, stored as `complaint_summary`, shown as header chip), (4) CAPA Recommendation (LLM + ICH Q10 rubric, stored as `capa_recommendation`, shown in `CAPARecommendationCard`) | ✅ Done | 2026-09-12 |
 | **Phase 7** | Commit Flow, Polish, Testing — pytest, visual QA, field-fill animation | ⏳ Pending | — |
 | **Phase 8** | Deployment — Render + Vercel + Neon, README | ⏳ Pending | — |
 

@@ -53,6 +53,9 @@ class ComplaintUpdate(BaseModel):
     priority: Optional[PriorityLevel] = None
     suggested_next_action: Optional[str] = None
     initial_risk_assessment: Optional[str] = None
+    # Phase 6 fields
+    complaint_summary: Optional[str] = None
+    capa_recommendation: Optional[str] = None
 
     @model_validator(mode="after")
     def validate_dates(self) -> "ComplaintUpdate":
@@ -86,6 +89,9 @@ class ComplaintResponse(BaseModel):
     initial_risk_assessment: Optional[str]
     raw_source_text: Optional[str]
     raw_source_file_path: Optional[str]
+    # Phase 6 bonus fields
+    complaint_summary: Optional[str] = None
+    capa_recommendation: Optional[str] = None
     created_at: Optional[datetime]
     updated_at: Optional[datetime]
     committed_at: Optional[datetime]

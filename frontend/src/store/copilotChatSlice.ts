@@ -58,6 +58,39 @@ export const sendChatMessage = createAsyncThunk(
   }
 );
 
+/**
+ * Restores chat history for a complaint.
+ * Priority: 1) Server DB via GET /chat-messages, 2) localStorage cache, 3) welcome message.
+ */
+export const restoreChatForComplaint = createAsyncThunk(
+  'copilotChat/restore',
+  async (complaintId: string) => {
+    // 1. Try fetching from server
+    try {
+      const { data } = await api.get<ChatMessage[]>(`/complaints/${complaintId}/chat-messages`);
+      if (data && data.length > 0) {
+        // Cache to localStorage for offline resilience
+        try {
+          localStorage.setItem(getChatStorageKey(complaintId), JSON.stringify(data));
+        } catch { /* ignore quota */ }
+        return data;
+      }
+    } catch {
+      // Network failure — fall through to localStorage
+    }
+    // 2. Try localStorage cache
+    const saved = localStorage.getItem(getChatStorageKey(complaintId));
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed as ChatMessage[];
+      } catch { /* ignore */ }
+    }
+    // 3. Return null → slice will show welcome message
+    return null;
+  }
+);
+
 // ── Slice ─────────────────────────────────────────────────────────────────────
 
 const copilotChatSlice = createSlice({
@@ -97,22 +130,6 @@ const copilotChatSlice = createSlice({
       if (complaintId) {
         persistMessages(complaintId, state.messages);
       }
-    },
-    restoreChatForComplaint(state, action: PayloadAction<string>) {
-      const complaintId = action.payload;
-      const saved = localStorage.getItem(getChatStorageKey(complaintId));
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            state.messages = parsed;
-            return;
-          }
-        } catch {
-          // ignore parse error
-        }
-      }
-      state.messages = [DEFAULT_WELCOME_MESSAGE];
     },
     setExtractionStatus(
       state,
@@ -162,6 +179,17 @@ const copilotChatSlice = createSlice({
       .addCase(sendChatMessage.rejected, (state, action) => {
         state.isProcessing = false;
         state.error = action.error.message ?? 'Failed to send message';
+      })
+      // Restore chat from server
+      .addCase(restoreChatForComplaint.fulfilled, (state, action) => {
+        if (action.payload && action.payload.length > 0) {
+          state.messages = action.payload;
+        } else {
+          state.messages = [DEFAULT_WELCOME_MESSAGE];
+        }
+      })
+      .addCase(restoreChatForComplaint.rejected, (state) => {
+        state.messages = [DEFAULT_WELCOME_MESSAGE];
       });
   },
 });
@@ -169,7 +197,6 @@ const copilotChatSlice = createSlice({
 export const {
   addUserMessage,
   addAssistantMessage,
-  restoreChatForComplaint,
   setExtractionStatus,
   setSessionId,
   setProcessing,

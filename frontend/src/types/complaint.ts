@@ -33,6 +33,9 @@ export interface Complaint {
   // Meta
   raw_source_text: string | null;
   raw_source_file_path: string | null;
+  // Phase 6 bonus fields
+  complaint_summary: string | null;
+  capa_recommendation: string | null;
   created_at: string | null;
   updated_at: string | null;
   committed_at: string | null;

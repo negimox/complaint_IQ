@@ -80,6 +80,34 @@
   border: 1px solid var(--color-neutral-200);
 }
 
+/* AI-generated complaint summary chip */
+.complaint-summary-chip {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(139, 92, 246, 0.05));
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  margin-bottom: 4px;
+  font-size: 0.8rem;
+  color: var(--color-neutral-600, #94a3b8);
+  line-height: 1.5;
+  font-style: italic;
+  animation: fadeIn 0.4s ease;
+}
+
+.complaint-summary-chip__icon {
+  color: #818cf8;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 /* Committed banner */
 .committed-banner {
   display: flex;

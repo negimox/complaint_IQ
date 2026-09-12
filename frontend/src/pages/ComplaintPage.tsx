@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Send, RefreshCw, Database, AlertCircle } from 'lucide-react';
+import { Send, RefreshCw, Database, AlertCircle, Sparkles } from 'lucide-react';
 
 import type { AppDispatch, RootState } from '../store';
 import {
@@ -34,6 +34,8 @@ import PasteTextModal from '../components/PasteTextModal';
 import ProgressBar from '../components/ProgressBar';
 import AIAssessmentCard from '../components/AIAssessmentCard';
 import SubmitChecklist from '../components/SubmitChecklist';
+import CAPARecommendationCard from '../components/CAPARecommendationCard';
+import DuplicateAlertCard from '../components/DuplicateAlertCard';
 import { evaluateCompleteness } from '../utils/validation';
 
 import './ComplaintPage.css';
@@ -50,15 +52,11 @@ const COMPLAINT_SOURCE_OPTIONS = [
 const CATEGORY_OPTIONS = [
   { value: 'Discoloration', label: 'Discoloration' },
   { value: 'Foreign Matter / Contamination', label: 'Foreign Matter / Contamination' },
-  { value: 'Contamination', label: 'Contamination' },
   { value: 'Packaging Defect', label: 'Packaging Defect' },
-  { value: 'Packaging', label: 'Packaging' },
   { value: 'Labeling Defect', label: 'Labeling Defect' },
-  { value: 'Labeling', label: 'Labeling' },
   { value: 'Subpotency / Efficacy', label: 'Subpotency / Efficacy' },
-  { value: 'Efficacy', label: 'Efficacy' },
-  { value: 'Sterility', label: 'Sterility' },
   { value: 'Dissolution / Physical', label: 'Dissolution / Physical' },
+  { value: 'Sterility', label: 'Sterility' },
   { value: 'Adverse Event', label: 'Adverse Event' },
   { value: 'Damaged Goods', label: 'Damaged Goods' },
   { value: 'Other', label: 'Other' },
@@ -524,6 +522,14 @@ export default function ComplaintPage() {
             </p>
           )}
 
+          {/* AI-generated complaint summary chip */}
+          {complaint?.complaint_summary && (
+            <div className="complaint-summary-chip">
+              <Sparkles size={11} className="complaint-summary-chip__icon" />
+              <span>{complaint.complaint_summary}</span>
+            </div>
+          )}
+
           {/* Section 1: Origin & Customer Details */}
           <SectionCard number={1} title="Origin & Customer Details">
             <SelectField
@@ -737,6 +743,13 @@ export default function ComplaintPage() {
                   riskAssessment={complaint.initial_risk_assessment}
                   onSeverityChange={(v) => handleFieldChange('severity_suggested', v)}
                   disabled={isDisabled}
+                />
+                {/* Phase 6: CAPA Recommendation */}
+                <CAPARecommendationCard capaRecommendation={complaint.capa_recommendation} />
+                {/* Phase 6: Duplicate Detection */}
+                <DuplicateAlertCard
+                  complaintId={complaint.id}
+                  isCommitted={isCommitted}
                 />
               </div>
             )}

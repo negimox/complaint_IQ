@@ -7,6 +7,12 @@ from sqlalchemy import (
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
 
+try:
+    from pgvector.sqlalchemy import Vector
+    HAS_PGVECTOR = True
+except ImportError:
+    HAS_PGVECTOR = False
+
 from app.core.database import Base
 from app.models.enums import (
     ComplaintStatus, SeverityLevel, PriorityLevel,
@@ -71,6 +77,12 @@ class Complaint(Base):
     # ── Audit / Source ─────────────────────────────────────────────────────────
     raw_source_text = Column(Text, nullable=True)          # original pasted text
     raw_source_file_path = Column(String(500), nullable=True)
+
+    # ── Phase 6 Bonus Features ─────────────────────────────────────────────────
+    complaint_summary = Column(String(300), nullable=True)   # ≤25-word AI summary for list/dashboard
+    capa_recommendation = Column(Text, nullable=True)        # AI CAPA type + actions (ICH Q10 rubric)
+    # pgvector embedding (384-dim) for duplicate detection — None if pgvector unavailable
+    embedding = Column(Vector(384), nullable=True) if HAS_PGVECTOR else Column(Text, nullable=True)
 
     # ── Timestamps ─────────────────────────────────────────────────────────────
     created_at = Column(DateTime(timezone=True), server_default=func.now())
