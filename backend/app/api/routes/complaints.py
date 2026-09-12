@@ -106,16 +106,29 @@ async def commit_complaint(
     _assert_not_committed(complaint)
 
     # ── Pre-commit validation ─────────────────────────────────────────────────
-    required_fields = [
-        "customer_name", "product_name", "batch_lot_number",
-        "complaint_category", "complaint_description",
-    ]
-    missing = [f for f in required_fields if not getattr(complaint, f)]
+    missing = []
+    if not complaint.customer_name or not str(complaint.customer_name).strip():
+        missing.append("customer_name")
+    if not complaint.product_name or not str(complaint.product_name).strip():
+        missing.append("product_name")
+    if not complaint.batch_lot_number or not str(complaint.batch_lot_number).strip():
+        missing.append("batch_lot_number")
+    if not complaint.manufacturing_date:
+        missing.append("manufacturing_date")
+    if not complaint.affected_quantity or not str(complaint.affected_quantity).strip():
+        missing.append("affected_quantity")
+    if not complaint.complaint_category or not str(complaint.complaint_category).strip():
+        missing.append("complaint_category")
+    if not complaint.complaint_description or len(str(complaint.complaint_description).strip()) < 20:
+        missing.append("complaint_description")
+    if not complaint.severity_suggested or complaint.severity_suggested.value in ("Not Assessed", "not_assessed"):
+        missing.append("severity_suggested")
+
     if missing:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail={
-                "message": "Cannot commit: required fields are missing.",
+                "message": "Cannot commit: required QMS fields are missing or incomplete.",
                 "missing_fields": missing,
             },
         )

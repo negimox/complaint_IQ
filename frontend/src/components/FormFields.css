@@ -56,6 +56,29 @@
   border-color: var(--color-neutral-200);
 }
 
+/* ── AI Auto-fill Glow Animation ────────────────────────────────────────── */
+@keyframes fieldFillGlow {
+  0% {
+    border-color: #6366f1;
+    background-color: #EEF2FF;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+  }
+  60% {
+    border-color: #818cf8;
+    background-color: #F5F7FF;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.12);
+  }
+  100% {
+    border-color: var(--color-neutral-200);
+    background-color: #fff;
+    box-shadow: none;
+  }
+}
+
+.form-field.field-just-filled .form-field__input {
+  animation: fieldFillGlow 1.2s ease-out;
+}
+
 /* ── Extracting / Skeleton Loading State ───────────────────────────────── */
 @keyframes fieldShimmer {
   0% {

@@ -376,10 +376,18 @@ The brief says it values *curiosity, clean code, product thinking, and problem-s
 | **Phase 4** | Document Ingestion — pdfplumber/docx/eml/pytesseract, multipart upload, table parsing, file persistence | ✅ Done | 2026-09-11 |
 | **Phase 5** | Conversational Correction Loop — Correction Node, POST /copilot/chat, field diffing, immutable audit_log trail | ✅ Done | 2026-09-11 |
 | **Phase 6** | Bonus Features — (1) Completeness Checker backend endpoint `GET /complaints/{id}/completeness`, (2) Duplicate Detection `GET /complaints/{id}/duplicates` (`pgvector` + `sentence-transformers` + `DuplicateAlertCard`), (3) Complaint Summary (LLM in `risk_assessor`, stored as `complaint_summary`, shown as header chip), (4) CAPA Recommendation (LLM + ICH Q10 rubric, stored as `capa_recommendation`, shown in `CAPARecommendationCard`) | ✅ Done | 2026-09-12 |
-| **Phase 7** | Commit Flow, Polish, Testing — pytest, visual QA, field-fill animation | ⏳ Pending | — |
+| **Phase 7** | Commit Flow, Polish, Testing — 15/15 pytest suite passing (validator, correction node, commit flow with 21 CFR 211.198 immutability, core & Phase 6 API endpoints), 8-field pre-commit validation harmonization, field-fill glow animation, build verified | ✅ Done | 2026-09-12 |
 | **Phase 8** | Deployment — Render + Vercel + Neon, README | ⏳ Pending | — |
 
 ### Implementation Notes & Deviations
+
+- **Phase 7 (Commit Flow, Testing & Polish)**:
+  - **Comprehensive Pytest Suite**: 15 tests across 4 test modules (`test_validator.py`, `test_correction_node.py`, `test_commit_flow.py`, `test_api_endpoints.py`) with 100% pass rate.
+  - **Pre-Commit Validation Harmonization**: `PATCH /complaints/{id}/commit` strictly checks all 8 required QMS integrity fields aligned with the Completeness Checker, rejecting incomplete complaints with HTTP 422 and a structured `missing_fields` response.
+  - **21 CFR 211.198 Immutability Enforcement**: Verified that committed records reject both direct `PATCH /complaints/{id}` updates and conversational corrections (`POST /copilot/chat`) with HTTP 403 Forbidden.
+  - **Connection Pool Isolation in Async Tests**: Configured `NullPool` in test fixtures to eliminate cross-event-loop connection reuse issues during pytest runs against PostgreSQL.
+  - **Visual Polish**: Added `fieldFillGlow` animation to `FormFields.css` providing a smooth 1.2s indigo pulse with glowing focus-ring when fields are auto-populated by the AI intake engine.
+  - **Production Build**: Verified clean TypeScript & Vite production compilation (`npm run build`) with zero errors.
 
 - **Database**: Using **Supabase** (hosted PostgreSQL). Alembic schema migration applied (`complaints`, `audit_log`, `chat_messages`). Connected through Supabase IPv4 connection pooler (`aws-0-ap-northeast-2.pooler.supabase.com`) with `ssl=require`.
 - **LLM Engine**: Groq with `openai/gpt-oss-20b` (fast extraction, correction & synthesis) and `openai/gpt-oss-120b` (ICH Q9/Q10 risk & severity assessment) with JSON mode, replacing decommissioned `gemma2-9b-it` and `llama-3.3-70b-versatile`.
