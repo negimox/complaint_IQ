@@ -74,7 +74,7 @@ class Complaint(Base):
     raw_source_text = Column(Text, nullable=True)          # original pasted text
     raw_source_file_path = Column(String(500), nullable=True)
 
-    # ── Phase 6 Bonus Features ─────────────────────────────────────────────────
+    # ── Bonus Features ─────────────────────────────────────────────────
     complaint_summary = Column(String(300), nullable=True)   # ≤25-word AI summary for list/dashboard
     capa_recommendation = Column(Text, nullable=True)        # AI CAPA type + actions (ICH Q10 rubric)
     # pgvector embedding (384-dim) for duplicate detection
