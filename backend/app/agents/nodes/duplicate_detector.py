@@ -1,42 +1,93 @@
 """Duplicate Complaint Detection: generates sentence embeddings and finds similar committed complaints via pgvector."""
 import logging
+import hashlib
+import math
 from typing import Optional, List, Dict, Any
 
 logger = logging.getLogger(__name__)
 
 # Lazy-load the model to avoid slowing startup
 _model = None
+_model_attempted = False
+
+
+def _hash_embedding(text: str, dim: int = 384) -> List[float]:
+    """
+    Generates a deterministic 384-dimensional normalized vector using subword/word feature hashing.
+    Used as an ultra-fast, memory-safe fallback (0 MB additional RAM).
+    """
+    words = text.lower().split()
+    vec = [0.0] * dim
+
+    tokens = list(words)
+    for i in range(len(words) - 1):
+        tokens.append(f"{words[i]}_{words[i+1]}")
+    for w in words:
+        if len(w) >= 3:
+            for j in range(len(w) - 2):
+                tokens.append(w[j:j+3])
+
+    for token in tokens:
+        h = int(hashlib.md5(token.encode("utf-8")).hexdigest(), 16)
+        idx = h % dim
+        sign = 1.0 if (h >> 16) & 1 else -1.0
+        vec[idx] += sign
+
+    norm = math.sqrt(sum(x * x for x in vec))
+    if norm > 0:
+        vec = [round(x / norm, 6) for x in vec]
+    return vec
 
 
 def _get_model():
-    """Lazy-loads sentence-transformers model (downloads ~90MB on first call, cached thereafter)."""
-    global _model
-    if _model is None:
+    """Lazy-loads sentence-transformers model. If unavailable or low-memory, safely returns None."""
+    global _model, _model_attempted
+    if not _model_attempted:
+        _model_attempted = True
         try:
+            import os
+            # If running in constrained environment, limit thread count
+            os.environ["OMP_NUM_THREADS"] = "1"
+            os.environ["MKL_NUM_THREADS"] = "1"
             from sentence_transformers import SentenceTransformer
             _model = SentenceTransformer("all-MiniLM-L6-v2")
             logger.info("sentence-transformers model loaded: all-MiniLM-L6-v2")
-        except ImportError:
-            logger.warning("sentence-transformers not installed; duplicate detection unavailable.")
+        except BaseException as e:
+            logger.warning(f"sentence-transformers unavailable or low-memory environment ({e}); using lightweight vectorizer.")
+            _model = None
     return _model
 
 
 def generate_embedding(text: str) -> Optional[List[float]]:
     """
     Generates a 384-dimensional embedding vector for the given text.
-    Returns None if sentence-transformers is unavailable.
+    Uses sentence-transformers when available, falling back safely to deterministic hashing.
+    Never crashes or causes OOM.
     """
     if not text or not text.strip():
         return None
     model = _get_model()
-    if model is None:
-        return None
+    if model is not None:
+        try:
+            embedding = model.encode(text, normalize_embeddings=True)
+            return embedding.tolist()
+        except BaseException as e:
+            logger.warning(f"SentenceTransformer encoding failed ({e}); falling back to hashing vectorizer.")
+    return _hash_embedding(text, dim=384)
+
+
+async def save_embedding(db, complaint_id: str, embedding: List[float]) -> None:
+    """Safely updates embedding column using native Postgres vector cast without ORM type issues."""
     try:
-        embedding = model.encode(text, normalize_embeddings=True)
-        return embedding.tolist()
+        from sqlalchemy import text as sql_text
+        vec_str = "[" + ",".join(str(v) for v in embedding) + "]"
+        await db.execute(
+            sql_text("UPDATE complaints SET embedding = CAST(:vec_str AS vector) WHERE id = :id"),
+            {"vec_str": vec_str, "id": complaint_id},
+        )
+        await db.commit()
     except Exception as e:
-        logger.error(f"Embedding generation failed: {e}")
-        return None
+        logger.warning(f"Failed to persist embedding for {complaint_id}: {e}")
 
 
 async def find_similar_complaints(

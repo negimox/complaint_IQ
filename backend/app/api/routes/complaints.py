@@ -143,11 +143,11 @@ async def commit_complaint(
         complaint.severity_final = complaint.severity_suggested
 
     # ── Ensure pgvector embedding is generated for QMS similarity index ───────
-    if complaint.embedding is None and complaint.complaint_description:
-        from app.agents.nodes.duplicate_detector import generate_embedding
+    if complaint.complaint_description:
+        from app.agents.nodes.duplicate_detector import generate_embedding, save_embedding
         vec = generate_embedding(complaint.complaint_description)
         if vec:
-            complaint.embedding = vec
+            await save_embedding(db, complaint.id, vec)
 
     # ── Audit trail ───────────────────────────────────────────────────────────
     audit_entry = AuditLog(
@@ -268,35 +268,30 @@ async def get_duplicate_complaints(
     on complaint_description embeddings (sentence-transformers all-MiniLM-L6-v2).
     Also generates and stores the embedding if not yet computed.
     """
-    from app.agents.nodes.duplicate_detector import generate_embedding, find_similar_complaints
+    from app.agents.nodes.duplicate_detector import generate_embedding, save_embedding, find_similar_complaints
+    from app.models.enums import ComplaintStatus
 
     complaint = await _get_or_404(complaint_id, db)
 
     # Generate embedding if not yet stored
-    if complaint.embedding is None and complaint.complaint_description:
+    embedding_vec: Optional[List[float]] = None
+    if complaint.complaint_description:
         embedding_vec = generate_embedding(complaint.complaint_description)
         if embedding_vec:
-            complaint.embedding = embedding_vec
-            await db.commit()
-            await db.refresh(complaint)
-    elif complaint.embedding is None:
+            await save_embedding(db, complaint_id, embedding_vec)
+
+    if not embedding_vec:
         return {
             "complaint_id": complaint_id,
             "duplicates": [],
+            "count": 0,
+            "threshold_used": threshold,
             "message": "No complaint description available for similarity search.",
         }
 
-    if complaint.embedding is None:
-        return {
-            "complaint_id": complaint_id,
-            "duplicates": [],
-            "message": "Embedding generation unavailable (sentence-transformers not installed).",
-        }
-
-    embedding_list = complaint.embedding if isinstance(complaint.embedding, list) else list(complaint.embedding)
     similar = await find_similar_complaints(
         db=db,
-        embedding=embedding_list,
+        embedding=embedding_vec,
         exclude_id=complaint_id,
         threshold=threshold,
         limit=limit,

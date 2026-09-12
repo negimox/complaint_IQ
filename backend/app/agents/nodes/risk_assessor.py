@@ -1,7 +1,7 @@
 """Risk Assessor node: evaluates severity, priority, and containment actions using Groq LLM."""
 import json
 import logging
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from groq import Groq
 from app.core.config import settings
 from app.agents.state import ComplaintGraphState
@@ -38,31 +38,8 @@ Return ONLY a valid JSON object matching this schema:
   "severity_suggested": "Critical" | "Major" | "Minor",
   "priority": "High" | "Medium" | "Low",
   "suggested_next_action": "Concrete operational containment steps (e.g., quarantine retain samples, initiate OOS investigation, request return of complaint sample)",
-  "initial_risk_assessment": "Concise 2-3 sentence explanation of the hazard, potential patient impact, and regulatory context"
-}
-"""
-
-CAPA_PROMPT = """You are a pharmaceutical QA expert trained in ICH Q10 Corrective and Preventive Action (CAPA) methodology.
-
-Based on the complaint category and severity provided, recommend the most appropriate CAPA type and concrete actions.
-
-CAPA RUBRIC (apply strictly):
-- Critical / Sterility / Foreign Matter / Contamination → "Batch Recall Evaluation + Immediate Process CAPA"
-  Actions: Issue quality hold on remaining batch, initiate batch recall assessment per 21 CFR 314.81, open critical deviation, quarantine all retained samples, notify QA Director and Regulatory Affairs.
-- Major / Discoloration / Subpotency / Dissolution → "OOS Investigation + Supplier/Process CAPA"
-  Actions: Quarantine retained samples for analytical re-assay, retrieve complaint sample from field, initiate OOS investigation per ICH Q10, inspect manufacturing batch records, review stability data, audit implicated supplier if NPM involved.
-- Major / Packaging Defect → "Packaging Line Inspection + Supplier Audit CAPA"
-  Actions: Inspect primary packaging line for tooling defects, audit packaging material supplier CoA, check seal integrity testing records, initiate supplier corrective action request (SCAR).
-- Major / Labeling Defect → "Label Revision + Label Reconciliation CAPA"
-  Actions: Withdraw mislabeled stock, initiate label revision through change control, perform label reconciliation audit, retrain labeling operators.
-- Minor / Cosmetic → "Trend Monitoring — No Immediate CAPA"
-  Actions: Log complaint in trending database, review at next monthly QA review meeting. Escalate to CAPA only if trend threshold (3+ similar complaints in 6 months) is exceeded.
-
-Return ONLY a valid JSON object:
-{
-  "capa_type": "short label of CAPA type (e.g. 'OOS Investigation + Supplier Audit CAPA')",
-  "recommended_actions": ["action 1", "action 2", "action 3"],
-  "rationale": "One sentence explaining why this CAPA type was selected"
+  "initial_risk_assessment": "Concise 2-3 sentence explanation of the hazard, potential patient impact, and regulatory context",
+  "capa_recommendation": "CAPA Type and 2-3 specific ICH Q10 recommended actions (e.g. CAPA Type: OOS Investigation + Process CAPA\\nRecommended Actions:\\n  • Quarantine retained samples for assay\\n  • Initiate OOS investigation per ICH Q10)"
 }
 """
 
@@ -96,44 +73,55 @@ def _generate_complaint_summary(client: Groq, model: str, extracted: Dict[str, A
         return f"{cat} complaint for {prod} (Lot: {lot})."
 
 
-def _generate_capa_recommendation(client: Groq, model: str, extracted: Dict[str, Any], severity: str) -> str:
-    """Generates a structured CAPA recommendation JSON string using the ICH Q10 rubric."""
-    prompt = (
-        f"Complaint Category: {extracted.get('complaint_category')}\n"
-        f"Severity: {severity}\n"
-        f"Product: {extracted.get('product_name')} ({extracted.get('product_strength_grade')})\n"
-        f"Impacted NPM: {extracted.get('impacted_npm') or 'None stated'}\n\n"
-        f"Apply the CAPA rubric and return the JSON recommendation:"
-    )
-    try:
-        resp = client.chat.completions.create(
-            model=model,
-            messages=[
-                {"role": "system", "content": CAPA_PROMPT},
-                {"role": "user", "content": prompt},
-            ],
-            response_format={"type": "json_object"},
-            temperature=0.1,
-            max_tokens=400,
+def _generate_capa_recommendation(extracted: Dict[str, Any], severity: str, llm_capa: Optional[str] = None) -> str:
+    """
+    Returns structured CAPA recommendation per ICH Q10 guidelines.
+    Uses LLM assessment if provided, or applies the authoritative ICH Q10 rubric.
+    """
+    if llm_capa and isinstance(llm_capa, str) and len(llm_capa.strip()) > 15:
+        return llm_capa.strip()
+
+    cat = (extracted.get("complaint_category") or "").lower()
+    if severity == "Critical" or any(t in cat for t in ["sterility", "foreign", "contamination", "mix-up"]):
+        return (
+            "CAPA Type: Batch Recall Evaluation + Immediate Process CAPA\n"
+            "Recommended Actions:\n"
+            "  • Issue quality hold on remaining batch inventory\n"
+            "  • Initiate batch recall assessment per 21 CFR 314.81\n"
+            "  • Open critical deviation and notify QA Director & Regulatory Affairs"
         )
-        content = (resp.choices[0].message.content or "").strip()
-        parsed = json.loads(content)
-        # Format as readable text for storage
-        capa_type = parsed.get("capa_type", "")
-        actions = parsed.get("recommended_actions", [])
-        rationale = parsed.get("rationale", "")
-        lines = [f"CAPA Type: {capa_type}", f"Rationale: {rationale}", "Recommended Actions:"]
-        lines += [f"  • {a}" for a in actions]
-        return "\n".join(lines)
-    except Exception as e:
-        logger.warning(f"CAPA recommendation generation failed: {e}")
-        # Deterministic fallback based on severity
-        if severity == "Critical":
-            return "CAPA Type: Batch Recall Evaluation + Immediate Process CAPA\nRecommended Actions:\n  • Issue quality hold on remaining batch\n  • Initiate batch recall assessment per 21 CFR 314.81\n  • Open critical deviation and notify QA Director"
-        elif severity == "Major":
-            return "CAPA Type: OOS Investigation + Supplier/Process CAPA\nRecommended Actions:\n  • Quarantine retained samples for analytical re-assay\n  • Retrieve complaint sample from field\n  • Initiate OOS investigation per ICH Q10"
-        else:
-            return "CAPA Type: Trend Monitoring — No Immediate CAPA\nRecommended Actions:\n  • Log complaint in trending database\n  • Review at next monthly QA meeting"
+    elif any(t in cat for t in ["packaging", "seal", "blister", "foil", "leak"]):
+        return (
+            "CAPA Type: Packaging Line Inspection + Supplier Audit CAPA\n"
+            "Recommended Actions:\n"
+            "  • Inspect primary packaging line tooling and seal integrity records\n"
+            "  • Audit packaging material supplier Certificate of Analysis (CoA)\n"
+            "  • Issue Supplier Corrective Action Request (SCAR)"
+        )
+    elif any(t in cat for t in ["label", "mislabel", "print"]):
+        return (
+            "CAPA Type: Label Revision + Label Reconciliation CAPA\n"
+            "Recommended Actions:\n"
+            "  • Quarantine affected stock and check warehouse inventory\n"
+            "  • Perform line clearance and label reconciliation audit\n"
+            "  • Retrain packaging operators on verification SOPs"
+        )
+    elif severity == "Major" or any(t in cat for t in ["discoloration", "potency", "dissolution", "subpotency", "particulate"]):
+        return (
+            "CAPA Type: OOS Investigation + Supplier/Process CAPA\n"
+            "Recommended Actions:\n"
+            "  • Quarantine retained samples for analytical re-assay\n"
+            "  • Retrieve complaint sample from field for visual inspection\n"
+            "  • Initiate Out-Of-Specification (OOS) investigation per ICH Q10"
+        )
+    else:
+        return (
+            "CAPA Type: Trend Monitoring — No Immediate CAPA\n"
+            "Recommended Actions:\n"
+            "  • Log complaint in trending database\n"
+            "  • Review at next monthly QA review meeting\n"
+            "  • Escalate to CAPA only if 3+ similar occurrences within 6 months"
+        )
 
 
 def risk_assessor_node(state: ComplaintGraphState) -> Dict[str, Any]:
@@ -211,7 +199,7 @@ def risk_assessor_node(state: ComplaintGraphState) -> Dict[str, Any]:
 
     # ── Phase 6: Generate complaint summary and CAPA recommendation ────────────
     complaint_summary = _generate_complaint_summary(client, model_fast, extracted, description)
-    capa_recommendation = _generate_capa_recommendation(client, model_fast, extracted, sev)
+    capa_recommendation = _generate_capa_recommendation(extracted, sev, assessment.get("capa_recommendation"))
 
     # Compile the final complaint record combining all nodes
     final_complaint = {
