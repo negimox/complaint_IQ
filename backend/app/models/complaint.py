@@ -7,11 +7,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
 
-try:
-    from pgvector.sqlalchemy import Vector
-    HAS_PGVECTOR = True
-except ImportError:
-    HAS_PGVECTOR = False
+from pgvector.sqlalchemy import Vector
 
 from app.core.database import Base
 from app.models.enums import (
@@ -81,8 +77,8 @@ class Complaint(Base):
     # ── Phase 6 Bonus Features ─────────────────────────────────────────────────
     complaint_summary = Column(String(300), nullable=True)   # ≤25-word AI summary for list/dashboard
     capa_recommendation = Column(Text, nullable=True)        # AI CAPA type + actions (ICH Q10 rubric)
-    # pgvector embedding (384-dim) for duplicate detection — None if pgvector unavailable
-    embedding = Column(Vector(384), nullable=True) if HAS_PGVECTOR else Column(Text, nullable=True)
+    # pgvector embedding (384-dim) for duplicate detection
+    embedding = Column(Vector(384), nullable=True)
 
     # ── Timestamps ─────────────────────────────────────────────────────────────
     created_at = Column(DateTime(timezone=True), server_default=func.now())
