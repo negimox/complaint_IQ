@@ -81,3 +81,24 @@
   background: var(--color-neutral-100);
   color: var(--color-neutral-500);
 }
+
+/* ── Skeleton Loading ──────────────────────────────────────────────────────── */
+@keyframes aiCardShimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.ai-assessment-card--skeleton {
+  border-style: dashed;
+}
+
+.ai-assessment-skeleton__bar {
+  border-radius: 4px;
+  background: linear-gradient(90deg, #EDE9FE 0%, #DDD6FE 50%, #EDE9FE 100%);
+  background-size: 200% 100%;
+  animation: aiCardShimmer 1.7s infinite ease-in-out;
+}

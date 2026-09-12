@@ -11,6 +11,7 @@ interface CopilotChatState {
   extractionProgress: number;        // 0–100
   extractionStatusLabel: string;     // "Extracting tabular data via OCR…"
   isProcessing: boolean;
+  isRestoringChat: boolean;
   error: string | null;
 }
 
@@ -29,6 +30,7 @@ const initialState: CopilotChatState = {
   extractionProgress: 0,
   extractionStatusLabel: '',
   isProcessing: false,
+  isRestoringChat: false,
   error: null,
 };
 
@@ -181,7 +183,11 @@ const copilotChatSlice = createSlice({
         state.error = action.error.message ?? 'Failed to send message';
       })
       // Restore chat from server
+      .addCase(restoreChatForComplaint.pending, (state) => {
+        state.isRestoringChat = true;
+      })
       .addCase(restoreChatForComplaint.fulfilled, (state, action) => {
+        state.isRestoringChat = false;
         if (action.payload && action.payload.length > 0) {
           state.messages = action.payload;
         } else {
@@ -189,6 +195,7 @@ const copilotChatSlice = createSlice({
         }
       })
       .addCase(restoreChatForComplaint.rejected, (state) => {
+        state.isRestoringChat = false;
         state.messages = [DEFAULT_WELCOME_MESSAGE];
       });
   },

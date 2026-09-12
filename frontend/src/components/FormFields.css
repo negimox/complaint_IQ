@@ -56,6 +56,35 @@
   border-color: var(--color-neutral-200);
 }
 
+/* ── Extracting / Skeleton Loading State ───────────────────────────────── */
+@keyframes fieldShimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.form-field--extracting .form-field__label {
+  opacity: 0.85;
+}
+
+.form-field__input--extracting {
+  background: linear-gradient(90deg, #F3F4F6 0%, #E5E7EB 50%, #F3F4F6 100%) !important;
+  background-size: 200% 100% !important;
+  animation: fieldShimmer 1.8s infinite ease-in-out !important;
+  border-color: #CBD5E1 !important;
+  color: #4B5563 !important;
+  cursor: wait !important;
+}
+
+.form-field__input--extracting::placeholder {
+  color: #6B7280 !important;
+  font-style: italic;
+  opacity: 0.9;
+}
+
 textarea.form-field__input {
   resize: vertical;
   min-height: 80px;

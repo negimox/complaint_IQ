@@ -8,6 +8,7 @@ export interface BaseFieldProps {
   disabled?: boolean;
   className?: string;
   aiJustFilled?: boolean;
+  loading?: boolean;
   required?: boolean;
   error?: string | null;
   helperText?: string;
@@ -31,6 +32,7 @@ export function TextField({
   disabled,
   className,
   aiJustFilled,
+  loading,
   required,
   error,
   helperText,
@@ -40,27 +42,30 @@ export function TextField({
   placeholder,
 }: TextFieldProps) {
   const hasError = Boolean(error);
+  const isFieldDisabled = disabled || loading;
   const cls = [
     'form-field',
     className,
     hasError ? 'form-field--error' : '',
     aiJustFilled ? 'field-just-filled' : '',
+    loading ? 'form-field--extracting' : '',
   ].filter(Boolean).join(' ');
 
   const inputCls = [
     'form-field__input',
     hasError ? 'form-field__input--error' : '',
+    loading ? 'form-field__input--extracting' : '',
   ].filter(Boolean).join(' ');
 
   const inputProps = {
     id,
-    disabled,
+    disabled: isFieldDisabled,
     className: inputCls,
     value: value ?? '',
     onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
       onChange?.(e.target.value),
     onBlur: () => onBlur?.(),
-    placeholder: placeholder ?? 'Awaiting AI extraction…',
+    placeholder: loading ? 'Extracting from source document…' : (placeholder ?? 'Awaiting AI extraction…'),
     'aria-invalid': hasError,
     'aria-required': required,
     'aria-describedby': hasError ? `${id}-error` : helperText ? `${id}-helper` : undefined,
@@ -107,17 +112,20 @@ export function SelectField({
   disabled,
   className,
   aiJustFilled,
+  loading,
   required,
   error,
   helperText,
   onBlur,
 }: SelectFieldProps) {
   const hasError = Boolean(error);
+  const isFieldDisabled = disabled || loading;
   const cls = [
     'form-field',
     className,
     hasError ? 'form-field--error' : '',
     aiJustFilled ? 'field-just-filled' : '',
+    loading ? 'form-field--extracting' : '',
   ].filter(Boolean).join(' ');
 
   const selectCls = [
@@ -125,6 +133,7 @@ export function SelectField({
     'form-field__select',
     !value ? 'form-field__select--empty' : '',
     hasError ? 'form-field__input--error' : '',
+    loading ? 'form-field__input--extracting' : '',
   ].filter(Boolean).join(' ');
 
   return (
@@ -135,7 +144,7 @@ export function SelectField({
       </label>
       <select
         id={id}
-        disabled={disabled}
+        disabled={isFieldDisabled}
         className={selectCls}
         value={value ?? ''}
         onChange={(e) => onChange?.(e.target.value)}
@@ -144,7 +153,9 @@ export function SelectField({
         aria-required={required}
         aria-describedby={hasError ? `${id}-error` : helperText ? `${id}-helper` : undefined}
       >
-        <option value="" disabled>Awaiting AI extraction…</option>
+        <option value="" disabled>
+          {loading ? 'AI extracting…' : 'Awaiting AI extraction…'}
+        </option>
         {value && !options.some((opt) => opt.value === value) && (
           <option value={value}>{value}</option>
         )}
@@ -182,6 +193,7 @@ export function DateField({
   disabled,
   className,
   aiJustFilled,
+  loading,
   required,
   error,
   helperText,
@@ -190,17 +202,20 @@ export function DateField({
   min,
 }: DateFieldProps) {
   const hasError = Boolean(error);
+  const isFieldDisabled = disabled || loading;
   const cls = [
     'form-field',
     className,
     hasError ? 'form-field--error' : '',
     aiJustFilled ? 'field-just-filled' : '',
+    loading ? 'form-field--extracting' : '',
   ].filter(Boolean).join(' ');
 
   const inputCls = [
     'form-field__input',
     !value ? 'form-field__input--empty' : '',
     hasError ? 'form-field__input--error' : '',
+    loading ? 'form-field__input--extracting' : '',
   ].filter(Boolean).join(' ');
 
   return (
@@ -212,14 +227,14 @@ export function DateField({
       <input
         type="date"
         id={id}
-        disabled={disabled}
+        disabled={isFieldDisabled}
         className={inputCls}
         value={value ?? ''}
         max={max}
         min={min}
         onChange={(e) => onChange?.(e.target.value)}
         onBlur={() => onBlur?.()}
-        placeholder="Awaiting AI extraction…"
+        placeholder={loading ? 'Extracting…' : 'Awaiting AI extraction…'}
         aria-invalid={hasError}
         aria-required={required}
         aria-describedby={hasError ? `${id}-error` : helperText ? `${id}-helper` : undefined}
@@ -252,22 +267,26 @@ export function QuantityField({
   disabled,
   className,
   aiJustFilled,
+  loading,
   required,
   error,
   helperText,
   onBlur,
 }: QuantityFieldProps) {
   const hasError = Boolean(error);
+  const isFieldDisabled = disabled || loading;
   const cls = [
     'form-field',
     className,
     hasError ? 'form-field--error' : '',
     aiJustFilled ? 'field-just-filled' : '',
+    loading ? 'form-field--extracting' : '',
   ].filter(Boolean).join(' ');
 
   const inputCls = [
     'form-field__input',
     hasError ? 'form-field__input--error' : '',
+    loading ? 'form-field__input--extracting' : '',
   ].filter(Boolean).join(' ');
 
   return (
@@ -280,12 +299,12 @@ export function QuantityField({
         <input
           type="text"
           id={id}
-          disabled={disabled}
+          disabled={isFieldDisabled}
           className={inputCls}
           value={value ?? ''}
           onChange={(e) => onChange?.(e.target.value)}
           onBlur={() => onBlur?.()}
-          placeholder="Awaiting AI extraction… (e.g. 12 bottles)"
+          placeholder={loading ? 'Extracting quantity…' : 'Awaiting AI extraction… (e.g. 12 bottles)'}
           aria-invalid={hasError}
           aria-required={required}
           aria-describedby={hasError ? `${id}-error` : helperText ? `${id}-helper` : undefined}

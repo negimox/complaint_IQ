@@ -72,11 +72,39 @@
 
 .dup-card__loading {
   display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 4px 0;
+}
+
+.dup-card__loading-head {
+  display: flex;
   align-items: center;
   gap: 8px;
   font-size: 0.78rem;
   color: var(--text-muted, #94a3b8);
-  padding: 8px 0;
+}
+
+.dup-item--skeleton {
+  border-style: dashed;
+  pointer-events: none;
+}
+
+@keyframes dupShimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.dup-skeleton__bar {
+  border-radius: 4px;
+  margin-bottom: 6px;
+  background: linear-gradient(90deg, rgba(251, 191, 36, 0.08) 0%, rgba(251, 191, 36, 0.2) 50%, rgba(251, 191, 36, 0.08) 100%);
+  background-size: 200% 100%;
+  animation: dupShimmer 1.7s infinite ease-in-out;
 }
 
 .dup-card__alert-row {

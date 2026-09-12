@@ -7,6 +7,7 @@ interface AIAssessmentCardProps {
   riskAssessment: string | null;
   onSeverityChange?: (val: SeverityLevel) => void;
   disabled?: boolean;
+  loading?: boolean;
 }
 
 const SEVERITY_OPTIONS: SeverityLevel[] = ['Critical', 'Major', 'Minor', 'Not Assessed'];
@@ -17,7 +18,36 @@ export default function AIAssessmentCard({
   riskAssessment,
   onSeverityChange,
   disabled,
+  loading,
 }: AIAssessmentCardProps) {
+  if (loading && !severity && !nextAction && !riskAssessment) {
+    return (
+      <div className="ai-assessment-card ai-assessment-card--skeleton fade-in-up" aria-busy="true">
+        <div className="ai-assessment-card__header">
+          <span className="ai-assessment-card__title text-section-label">
+            ✦ AI Risk Assessment
+          </span>
+          <span className="ai-assessment-card__hint text-small">Synthesizing risk matrix…</span>
+        </div>
+        <div className="ai-assessment-card__body">
+          <div className="ai-assessment-card__row">
+            <span className="ai-assessment-card__field-label text-label">Severity (Suggested)</span>
+            <div className="ai-assessment-skeleton__bar" style={{ width: 130, height: 26 }} />
+          </div>
+          <div className="ai-assessment-card__row">
+            <span className="ai-assessment-card__field-label text-label">Suggested Next Action</span>
+            <div className="ai-assessment-skeleton__bar" style={{ width: '82%', height: 15 }} />
+          </div>
+          <div className="ai-assessment-card__row">
+            <span className="ai-assessment-card__field-label text-label">Initial Risk Assessment</span>
+            <div className="ai-assessment-skeleton__bar" style={{ width: '92%', height: 15 }} />
+            <div className="ai-assessment-skeleton__bar" style={{ width: '65%', height: 15 }} />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!severity && !nextAction && !riskAssessment) return null;
 
   return (

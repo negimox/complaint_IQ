@@ -98,9 +98,16 @@ const DuplicateAlertCard: React.FC<DuplicateAlertCardProps> = ({
       {expanded && (
         <div className="dup-card__body">
           {loading && (
-            <div className="dup-card__loading">
-              <Loader2 size={14} className="dup-card__spinner" />
-              <span>Searching for similar complaints in QMS ledger…</span>
+            <div className="dup-card__loading" aria-busy="true">
+              <div className="dup-card__loading-head">
+                <Loader2 size={13} className="dup-card__spinner" />
+                <span>Searching QMS ledger for similar complaints via pgvector…</span>
+              </div>
+              <div className="dup-item dup-item--skeleton">
+                <div className="dup-skeleton__bar" style={{ width: 110, height: 16 }} />
+                <div className="dup-skeleton__bar" style={{ width: '85%', height: 13 }} />
+                <div className="dup-skeleton__bar" style={{ width: '60%', height: 13 }} />
+              </div>
             </div>
           )}
 

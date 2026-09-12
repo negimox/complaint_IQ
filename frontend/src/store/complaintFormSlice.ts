@@ -221,6 +221,9 @@ const complaintFormSlice = createSlice({
         state.justFilledFields = new Set(Object.keys(action.payload));
       }
     },
+    clearFormError(state) {
+      state.error = null;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -304,6 +307,7 @@ export const {
   markFieldFilled,
   clearFilledFields,
   applyAIExtraction,
+  clearFormError,
 } = complaintFormSlice.actions;
 
 export default complaintFormSlice.reducer;

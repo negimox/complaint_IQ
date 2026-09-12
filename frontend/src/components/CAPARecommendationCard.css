@@ -196,3 +196,25 @@
   margin-top: 1px;
   color: #f59e0b;
 }
+
+/* ── Skeleton Loading ──────────────────────────────────────────────────────── */
+@keyframes capaShimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.capa-card--skeleton {
+  border-style: dashed;
+}
+
+.capa-skeleton__bar {
+  border-radius: 4px;
+  margin-bottom: 8px;
+  background: linear-gradient(90deg, rgba(139, 92, 246, 0.1) 0%, rgba(139, 92, 246, 0.25) 50%, rgba(139, 92, 246, 0.1) 100%);
+  background-size: 200% 100%;
+  animation: capaShimmer 1.7s infinite ease-in-out;
+}

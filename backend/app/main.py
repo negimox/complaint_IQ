@@ -9,9 +9,17 @@ from app.api.routes import complaints, copilot
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Create all tables on startup (Alembic handles migrations in prod)."""
+    """Create all tables and ensure schema additions on startup."""
     async with engine.begin() as conn:
+        from sqlalchemy import text
+        try:
+            await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector;"))
+        except Exception:
+            pass
         await conn.run_sync(Base.metadata.create_all)
+        # Ensure Phase 6 columns exist on complaints table
+        await conn.execute(text("ALTER TABLE complaints ADD COLUMN IF NOT EXISTS complaint_summary VARCHAR(300);"))
+        await conn.execute(text("ALTER TABLE complaints ADD COLUMN IF NOT EXISTS capa_recommendation TEXT;"))
     yield
     await engine.dispose()
 

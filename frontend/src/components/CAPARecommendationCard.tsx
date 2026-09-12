@@ -4,6 +4,7 @@ import './CAPARecommendationCard.css';
 
 interface CAPARecommendationCardProps {
   capaRecommendation: string | null;
+  loading?: boolean;
 }
 
 function parseCAPAText(raw: string): {
@@ -34,8 +35,28 @@ function parseCAPAText(raw: string): {
 
 const CAPARecommendationCard: React.FC<CAPARecommendationCardProps> = ({
   capaRecommendation,
+  loading,
 }) => {
   const [expanded, setExpanded] = useState(true);
+
+  if (loading && !capaRecommendation) {
+    return (
+      <div className="capa-card capa-card--skeleton fade-in-up" aria-busy="true">
+        <div className="capa-card__header">
+          <span className="capa-card__header-left">
+            <ShieldAlert size={15} className="capa-card__icon" />
+            <span className="capa-card__title">CAPA Recommendation</span>
+            <span className="capa-card__badge">Evaluating ICH Q10…</span>
+          </span>
+        </div>
+        <div className="capa-card__body">
+          <div className="capa-skeleton__bar" style={{ width: '45%', height: 18 }} />
+          <div className="capa-skeleton__bar" style={{ width: '90%', height: 14 }} />
+          <div className="capa-skeleton__bar" style={{ width: '75%', height: 14 }} />
+        </div>
+      </div>
+    );
+  }
 
   if (!capaRecommendation) return null;
 
