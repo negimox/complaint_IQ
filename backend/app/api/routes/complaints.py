@@ -142,6 +142,13 @@ async def commit_complaint(
     if not complaint.severity_final and complaint.severity_suggested:
         complaint.severity_final = complaint.severity_suggested
 
+    # ── Ensure pgvector embedding is generated for QMS similarity index ───────
+    if complaint.embedding is None and complaint.complaint_description:
+        from app.agents.nodes.duplicate_detector import generate_embedding
+        vec = generate_embedding(complaint.complaint_description)
+        if vec:
+            complaint.embedding = vec
+
     # ── Audit trail ───────────────────────────────────────────────────────────
     audit_entry = AuditLog(
         complaint_id=complaint.id,

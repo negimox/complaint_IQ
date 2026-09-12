@@ -24,11 +24,15 @@ interface DuplicatesResponse {
 
 interface DuplicateAlertCardProps {
   complaintId: string | null;
+  complaintDescription?: string | null;
+  isExtracting?: boolean;
   isCommitted?: boolean;
 }
 
 const DuplicateAlertCard: React.FC<DuplicateAlertCardProps> = ({
   complaintId,
+  complaintDescription,
+  isExtracting = false,
   isCommitted,
 }) => {
   const [loading, setLoading] = useState(false);
@@ -36,9 +40,12 @@ const DuplicateAlertCard: React.FC<DuplicateAlertCardProps> = ({
   const [expanded, setExpanded] = useState(true);
   const [checked, setChecked] = useState(false);
   const [message, setMessage] = useState('');
+  const lastCheckedDescRef = React.useRef<string | null>(null);
 
   const checkDuplicates = useCallback(async () => {
-    if (!complaintId || checked) return;
+    if (!complaintId || isExtracting || !complaintDescription || complaintDescription.trim().length < 15) {
+      return;
+    }
     setLoading(true);
     try {
       const { data } = await api.get<DuplicatesResponse>(
@@ -46,22 +53,33 @@ const DuplicateAlertCard: React.FC<DuplicateAlertCardProps> = ({
       );
       setDuplicates(data.duplicates || []);
       setMessage(data.message || '');
+      lastCheckedDescRef.current = complaintDescription.trim();
     } catch {
       setDuplicates([]);
     } finally {
       setLoading(false);
       setChecked(true);
     }
-  }, [complaintId, checked]);
+  }, [complaintId, isExtracting, complaintDescription]);
 
   useEffect(() => {
-    // Auto-check after complaint is created (has an ID)
-    if (complaintId && !checked) {
+    // Only check when complaint has an ID, extraction is finished, and description is present
+    if (
+      complaintId &&
+      !isExtracting &&
+      complaintDescription &&
+      complaintDescription.trim().length >= 15 &&
+      lastCheckedDescRef.current !== complaintDescription.trim()
+    ) {
       checkDuplicates();
+    } else if (!complaintDescription || complaintDescription.trim().length < 15) {
+      setDuplicates([]);
+      setChecked(false);
+      lastCheckedDescRef.current = null;
     }
-  }, [complaintId, checked, checkDuplicates]);
+  }, [complaintId, isExtracting, complaintDescription, checkDuplicates]);
 
-  if (!complaintId || (!loading && checked && duplicates.length === 0)) return null;
+  if (!complaintId || isExtracting || (!loading && checked && duplicates.length === 0)) return null;
 
   const getSeverityClass = (sev: string | null) => {
     if (sev === 'Critical') return 'dup-severity--critical';

@@ -1,20 +1,21 @@
 /* ── CAPA Recommendation Card ─────────────────────────────────────────────── */
 .capa-card {
-  border-radius: 10px;
+  border-radius: var(--radius-md, 10px);
   overflow: hidden;
   margin-top: 14px;
-  border: 1px solid rgba(139, 92, 246, 0.25);
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.06), rgba(109, 40, 217, 0.04));
+  border: 1px solid #DDD6FE;
+  background: linear-gradient(135deg, #FAF5FF 0%, #F3E8FF 100%);
+  box-shadow: 0 1px 3px rgba(109, 40, 217, 0.05);
 }
 
 .capa-card--urgent {
-  border-color: rgba(239, 68, 68, 0.35);
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.07), rgba(185, 28, 28, 0.04));
+  border-color: #FECACA;
+  background: linear-gradient(135deg, #FEF2F2 0%, #FEE2E2 100%);
 }
 
 .capa-card--low {
-  border-color: rgba(16, 185, 129, 0.25);
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.06), rgba(5, 150, 105, 0.03));
+  border-color: #A7F3D0;
+  background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%);
 }
 
 .capa-card__header {
@@ -22,16 +23,29 @@
   align-items: center;
   justify-content: space-between;
   padding: 10px 14px;
-  background: transparent;
+  background: rgba(109, 40, 217, 0.06);
   border: none;
+  border-bottom: 1px solid #DDD6FE;
   cursor: pointer;
   width: 100%;
-  color: var(--text-primary, #e2e8f0);
-  transition: background 0.15s;
+  color: #4C1D95;
+  transition: background 0.15s ease;
+}
+
+.capa-card--urgent .capa-card__header {
+  background: rgba(220, 38, 38, 0.06);
+  border-bottom-color: #FECACA;
+  color: #991B1B;
+}
+
+.capa-card--low .capa-card__header {
+  background: rgba(16, 185, 129, 0.06);
+  border-bottom-color: #A7F3D0;
+  color: #065F46;
 }
 
 .capa-card__header:hover {
-  background: rgba(139, 92, 246, 0.07);
+  background: rgba(109, 40, 217, 0.10);
 }
 
 .capa-card__header-left {
@@ -41,53 +55,53 @@
 }
 
 .capa-card__icon {
-  color: #a78bfa;
+  color: #6D28D9;
   flex-shrink: 0;
 }
 
 .capa-card--urgent .capa-card__icon {
-  color: #f87171;
+  color: #DC2626;
 }
 
 .capa-card--low .capa-card__icon {
-  color: #34d399;
+  color: #059669;
 }
 
 .capa-card__title {
   font-size: 0.78rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  color: #c4b5fd;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: #5B21B6;
   text-transform: uppercase;
 }
 
 .capa-card--urgent .capa-card__title {
-  color: #fca5a5;
+  color: #991B1B;
 }
 
 .capa-card--low .capa-card__title {
-  color: #6ee7b7;
+  color: #065F46;
 }
 
 .capa-card__badge {
   font-size: 0.65rem;
   font-weight: 700;
   letter-spacing: 0.05em;
-  padding: 1px 6px;
+  padding: 2px 7px;
   border-radius: 4px;
-  background: rgba(139, 92, 246, 0.2);
-  color: #a78bfa;
-  border: 1px solid rgba(139, 92, 246, 0.3);
+  background: #EDE9FE;
+  color: #5B21B6;
+  border: 1px solid #C4B5FD;
 }
 
 .capa-card--urgent .capa-card__badge {
-  background: rgba(239, 68, 68, 0.15);
-  color: #f87171;
-  border-color: rgba(239, 68, 68, 0.3);
+  background: #FEE2E2;
+  color: #991B1B;
+  border-color: #FCA5A5;
 }
 
 .capa-card__body {
-  padding: 4px 14px 14px;
+  padding: 12px 14px 14px;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -95,51 +109,50 @@
 
 .capa-card__type {
   display: flex;
-  align-items: flex-start;
+  align-items: baseline;
   gap: 8px;
   flex-wrap: wrap;
 }
 
 .capa-card__type-label {
-  font-size: 0.68rem;
-  font-weight: 600;
+  font-size: 0.72rem;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--text-muted, #94a3b8);
+  color: #4B5563;
   white-space: nowrap;
-  margin-top: 2px;
 }
 
 .capa-card__type-value {
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: #c4b5fd;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #4C1D95;
   line-height: 1.4;
 }
 
 .capa-card__type-value--urgent {
-  color: #fca5a5;
+  color: #B91C1C;
 }
 
 .capa-card__rationale {
-  font-size: 0.78rem;
-  color: var(--text-secondary, #94a3b8);
+  font-size: 0.8rem;
+  color: #374151;
   line-height: 1.55;
   margin: 0;
   padding: 8px 10px;
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.75);
   border-radius: 6px;
-  border-left: 2px solid rgba(139, 92, 246, 0.35);
+  border-left: 3px solid #8B5CF6;
   font-style: italic;
 }
 
 .capa-card__actions-label {
   display: block;
-  font-size: 0.7rem;
-  font-weight: 600;
+  font-size: 0.72rem;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--text-muted, #94a3b8);
+  color: #374151;
   margin-bottom: 6px;
 }
 
@@ -149,52 +162,54 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 6px;
 }
 
 .capa-card__action-item {
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  font-size: 0.8rem;
-  color: var(--text-secondary, #cbd5e1);
+  font-size: 0.82rem;
+  color: #1F2937;
+  font-weight: 500;
   line-height: 1.45;
 }
 
 .capa-card__action-bullet {
   flex-shrink: 0;
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
-  background: #a78bfa;
+  background: #6D28D9;
   margin-top: 6px;
 }
 
 .capa-card--urgent .capa-card__action-bullet {
-  background: #f87171;
+  background: #DC2626;
 }
 
 .capa-card--low .capa-card__action-bullet {
-  background: #34d399;
+  background: #059669;
 }
 
 .capa-card__disclaimer {
   display: flex;
   align-items: flex-start;
-  gap: 6px;
-  font-size: 0.68rem;
-  color: var(--text-muted, #64748b);
-  padding: 7px 9px;
-  background: rgba(0, 0, 0, 0.15);
+  gap: 7px;
+  font-size: 0.72rem;
+  color: #78350F;
+  font-weight: 500;
+  padding: 8px 10px;
+  background: #FFFBEB;
   border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  border: 1px solid #FDE68A;
   line-height: 1.45;
 }
 
 .capa-card__disclaimer svg {
   flex-shrink: 0;
   margin-top: 1px;
-  color: #f59e0b;
+  color: #D97706;
 }
 
 /* ── Skeleton Loading ──────────────────────────────────────────────────────── */

@@ -962,6 +962,8 @@ export default function ComplaintPage() {
                 {/* Phase 6: Duplicate Detection */}
                 <DuplicateAlertCard
                   complaintId={complaint.id}
+                  complaintDescription={complaint.complaint_description}
+                  isExtracting={isExtracting}
                   isCommitted={isCommitted}
                 />
               </div>

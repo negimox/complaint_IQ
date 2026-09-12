@@ -1,10 +1,11 @@
 /* ── Duplicate Alert Card ─────────────────────────────────────────────────── */
 .dup-card {
-  border-radius: 10px;
+  border-radius: var(--radius-md, 10px);
   overflow: hidden;
   margin-top: 14px;
-  border: 1px solid rgba(251, 191, 36, 0.25);
-  background: linear-gradient(135deg, rgba(251, 191, 36, 0.05), rgba(217, 119, 6, 0.03));
+  border: 1px solid #FCD34D;
+  background: linear-gradient(135deg, #FFFDF5 0%, #FFFBEB 100%);
+  box-shadow: 0 1px 3px rgba(217, 119, 6, 0.08);
 }
 
 .dup-card__header {
@@ -12,16 +13,17 @@
   align-items: center;
   justify-content: space-between;
   padding: 10px 14px;
-  background: transparent;
+  background: rgba(245, 158, 11, 0.08);
   border: none;
+  border-bottom: 1px solid #FDE68A;
   cursor: pointer;
   width: 100%;
-  color: var(--text-primary, #e2e8f0);
-  transition: background 0.15s;
+  color: #78350F;
+  transition: background 0.15s ease;
 }
 
 .dup-card__header:hover {
-  background: rgba(251, 191, 36, 0.06);
+  background: rgba(245, 158, 11, 0.14);
 }
 
 .dup-card__header-left {
@@ -31,31 +33,31 @@
 }
 
 .dup-card__icon {
-  color: #fbbf24;
+  color: #B45309;
   flex-shrink: 0;
 }
 
 .dup-card__title {
   font-size: 0.78rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  color: #fde68a;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: #78350F;
   text-transform: uppercase;
 }
 
 .dup-card__count-badge {
   font-size: 0.65rem;
   font-weight: 700;
-  padding: 1px 7px;
+  padding: 2px 8px;
   border-radius: 10px;
-  background: rgba(251, 191, 36, 0.2);
-  color: #fbbf24;
-  border: 1px solid rgba(251, 191, 36, 0.35);
+  background: #FEF3C7;
+  color: #92400E;
+  border: 1px solid #F59E0B;
 }
 
 .dup-card__spinner {
   animation: spin 1s linear infinite;
-  color: #fbbf24;
+  color: #B45309;
 }
 
 @keyframes spin {
@@ -64,7 +66,7 @@
 }
 
 .dup-card__body {
-  padding: 4px 14px 14px;
+  padding: 12px 14px 14px;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -82,7 +84,8 @@
   align-items: center;
   gap: 8px;
   font-size: 0.78rem;
-  color: var(--text-muted, #94a3b8);
+  color: #64748B;
+  font-weight: 500;
 }
 
 .dup-item--skeleton {
@@ -102,7 +105,7 @@
 .dup-skeleton__bar {
   border-radius: 4px;
   margin-bottom: 6px;
-  background: linear-gradient(90deg, rgba(251, 191, 36, 0.08) 0%, rgba(251, 191, 36, 0.2) 50%, rgba(251, 191, 36, 0.08) 100%);
+  background: linear-gradient(90deg, rgba(251, 191, 36, 0.12) 0%, rgba(251, 191, 36, 0.28) 50%, rgba(251, 191, 36, 0.12) 100%);
   background-size: 200% 100%;
   animation: dupShimmer 1.7s infinite ease-in-out;
 }
@@ -110,20 +113,21 @@
 .dup-card__alert-row {
   display: flex;
   align-items: flex-start;
-  gap: 7px;
-  font-size: 0.78rem;
-  color: #fde68a;
-  padding: 8px 10px;
-  background: rgba(251, 191, 36, 0.08);
+  gap: 8px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #78350F;
+  padding: 9px 12px;
+  background: #FEF3C7;
   border-radius: 6px;
-  border: 1px solid rgba(251, 191, 36, 0.18);
+  border: 1px solid #FCD34D;
   line-height: 1.5;
 }
 
 .dup-card__alert-row svg {
   flex-shrink: 0;
-  margin-top: 1px;
-  color: #fbbf24;
+  margin-top: 2px;
+  color: #D97706;
 }
 
 .dup-card__list {
@@ -133,18 +137,20 @@
 }
 
 .dup-item {
-  padding: 10px 12px;
+  padding: 11px 13px;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: #FFFFFF;
+  border: 1px solid #FDE68A;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  transition: border-color 0.15s;
+  gap: 6px;
+  transition: all 0.15s ease;
 }
 
 .dup-item:hover {
-  border-color: rgba(251, 191, 36, 0.2);
+  border-color: #F59E0B;
+  box-shadow: 0 2px 5px rgba(245, 158, 11, 0.12);
 }
 
 .dup-item__top {
@@ -155,87 +161,93 @@
 }
 
 .dup-item__id {
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 700;
   font-family: monospace;
-  color: #fbbf24;
+  color: #0F172A;
   letter-spacing: 0.02em;
 }
 
 .dup-item__sim {
-  font-size: 0.68rem;
+  font-size: 0.7rem;
   font-weight: 700;
-  padding: 1px 7px;
+  padding: 2px 7px;
   border-radius: 4px;
 }
 
 .dup-sim--very-high {
-  background: rgba(239, 68, 68, 0.15);
-  color: #f87171;
-  border: 1px solid rgba(239, 68, 68, 0.25);
+  background: #DCFCE7;
+  color: #15803D;
+  border: 1px solid #86EFAC;
 }
 
 .dup-sim--high {
-  background: rgba(251, 191, 36, 0.15);
-  color: #fbbf24;
-  border: 1px solid rgba(251, 191, 36, 0.25);
+  background: #FEF3C7;
+  color: #92400E;
+  border: 1px solid #FCD34D;
 }
 
 .dup-sim--medium {
-  background: rgba(59, 130, 246, 0.15);
-  color: #93c5fd;
-  border: 1px solid rgba(59, 130, 246, 0.25);
+  background: #DBEAFE;
+  color: #1E40AF;
+  border: 1px solid #93C5FD;
 }
 
 .dup-item__sev {
-  font-size: 0.65rem;
+  font-size: 0.68rem;
   font-weight: 700;
   text-transform: uppercase;
-  padding: 1px 6px;
+  padding: 2px 6px;
   border-radius: 3px;
   letter-spacing: 0.04em;
 }
 
 .dup-severity--critical {
-  background: rgba(239, 68, 68, 0.15);
-  color: #f87171;
+  background: #FEE2E2;
+  color: #B91C1C;
+  border: 1px solid #FECACA;
 }
 
 .dup-severity--major {
-  background: rgba(251, 146, 60, 0.15);
-  color: #fb923c;
+  background: #FFEDD5;
+  color: #C2410C;
+  border: 1px solid #FED7AA;
 }
 
 .dup-severity--minor {
-  background: rgba(16, 185, 129, 0.15);
-  color: #34d399;
+  background: #FEF9C3;
+  color: #854D0E;
+  border: 1px solid #FEF08A;
 }
 
 .dup-item__summary {
-  font-size: 0.78rem;
-  color: var(--text-secondary, #cbd5e1);
+  font-size: 0.8rem;
+  color: #1E293B;
   margin: 0;
-  line-height: 1.45;
+  line-height: 1.5;
+  font-weight: 500;
 }
 
 .dup-item__meta {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
 .dup-item__meta span {
-  font-size: 0.68rem;
-  color: var(--text-muted, #64748b);
-  background: rgba(255, 255, 255, 0.04);
-  padding: 1px 7px;
+  font-size: 0.72rem;
+  color: #475569;
+  font-weight: 500;
+  background: #F1F5F9;
+  padding: 2px 8px;
   border-radius: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid #E2E8F0;
 }
 
 .dup-card__no-results {
-  font-size: 0.78rem;
-  color: var(--text-muted, #64748b);
+  font-size: 0.8rem;
+  color: #64748B;
+  font-weight: 500;
   margin: 0;
   padding: 4px 0;
 }

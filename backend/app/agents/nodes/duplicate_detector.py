@@ -63,8 +63,9 @@ async def find_similar_complaints(
         from sqlalchemy import text as sql_text
 
         vec_str = "[" + ",".join(str(v) for v in embedding) + "]"
+        exclude_clause = "AND id != :exclude_id" if exclude_id else ""
 
-        query_str = """
+        query_str = f"""
             SELECT
                 id,
                 customer_name,
@@ -79,21 +80,21 @@ async def find_similar_complaints(
             WHERE
                 embedding IS NOT NULL
                 AND status = 'committed'
-                AND (:exclude_id IS NULL OR id != :exclude_id)
+                {exclude_clause}
                 AND 1 - (embedding <=> CAST(:query_vec AS vector)) >= :threshold
             ORDER BY embedding <=> CAST(:query_vec AS vector)
             LIMIT :limit
         """
 
-        result = await db.execute(
-            sql_text(query_str),
-            {
-                "query_vec": vec_str,
-                "exclude_id": exclude_id,
-                "threshold": threshold,
-                "limit": limit,
-            },
-        )
+        params = {
+            "query_vec": vec_str,
+            "threshold": threshold,
+            "limit": limit,
+        }
+        if exclude_id:
+            params["exclude_id"] = exclude_id
+
+        result = await db.execute(sql_text(query_str), params)
         rows = result.fetchall()
 
         return [
