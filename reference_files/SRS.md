@@ -377,7 +377,7 @@ The brief says it values *curiosity, clean code, product thinking, and problem-s
 | **Phase 5** | Conversational Correction Loop — Correction Node, POST /copilot/chat, field diffing, immutable audit_log trail | ✅ Done | 2026-09-11 |
 | **Phase 6** | Bonus Features — (1) Completeness Checker backend endpoint `GET /complaints/{id}/completeness`, (2) Duplicate Detection `GET /complaints/{id}/duplicates` (`pgvector` + `sentence-transformers` + `DuplicateAlertCard`), (3) Complaint Summary (LLM in `risk_assessor`, stored as `complaint_summary`, shown as header chip), (4) CAPA Recommendation (LLM + ICH Q10 rubric, stored as `capa_recommendation`, shown in `CAPARecommendationCard`) | ✅ Done | 2026-09-12 |
 | **Phase 7** | Commit Flow, Polish, Testing — 15/15 pytest suite passing (validator, correction node, commit flow with 21 CFR 211.198 immutability, core & Phase 6 API endpoints), 8-field pre-commit validation harmonization, field-fill glow animation, build verified | ✅ Done | 2026-09-12 |
-| **Phase 8** | Deployment — Render + Vercel + Neon, README | ⏳ Pending | — |
+| **Phase 8** | Deployment & Submission — Render/Vercel guide, concise README, 2-part video recording scripts | 🔄 In Progress | — |
 
 ### Implementation Notes & Deviations
 
