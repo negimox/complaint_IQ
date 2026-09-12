@@ -74,14 +74,6 @@ Additional AI features are highly appreciated.
 *   AI Risk Classification
 
 ---
-
-## **Deliverables**
-
-Submit your assignment using the link below:
-
-**Submission Form:**
-<u>https://forms.gle/n8ukhVBtNEWnTydV7</u>
-
 ### Include:
 
 *   GitHub Repository

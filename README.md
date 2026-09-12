@@ -4,6 +4,17 @@ ComplaintIQ is a pharmaceutical Quality Management System (QMS) complaint intake
 
 ---
 
+## Live Deployments & Video Demonstrations
+
+| Resource | Link |
+|---|---|
+| **Live Web Application (Vercel)** | [https://complaint-iq-delta.vercel.app](https://complaint-iq-delta.vercel.app) |
+| **Backend API Documentation (Render)** | [https://complaint-iq-backend.onrender.com/docs](https://complaint-iq-backend.onrender.com/docs) |
+| **Video 1: Working Product Demonstration** | [Watch on Google Drive](https://drive.google.com/file/d/1rIRTuuRHK4G2iehMvdQwc2CxbZCFjtot/view?usp=sharing) |
+| **Video 2: Codebase & Architecture Walkthrough** | *(Separate submission link)* |
+
+---
+
 ## System Architecture
 
 ```mermaid

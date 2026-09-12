@@ -1,34 +1,35 @@
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import type { ChatMessage, ExtractionStatus } from '../types/complaint';
-import { api } from '../api/client';
+import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
+import type { ChatMessage, ExtractionStatus } from "../types/complaint";
+import { api } from "../api/client";
 
-export const getChatStorageKey = (complaintId: string) => `complaint_iq_chat_${complaintId}`;
+export const getChatStorageKey = (complaintId: string) =>
+  `complaint_iq_chat_${complaintId}`;
 
 interface CopilotChatState {
   messages: ChatMessage[];
   sessionId: string | null;
   extractionStatus: ExtractionStatus;
-  extractionProgress: number;        // 0–100
-  extractionStatusLabel: string;     // "Extracting tabular data via OCR…"
+  extractionProgress: number; // 0–100
+  extractionStatusLabel: string; // "Extracting tabular data via OCR…"
   isProcessing: boolean;
   isRestoringChat: boolean;
   error: string | null;
 }
 
 const DEFAULT_WELCOME_MESSAGE: ChatMessage = {
-  id: 'welcome',
-  role: 'assistant',
+  id: "welcome",
+  role: "assistant",
   content:
-    'Upload a complaint document or paste text above. I will automatically extract the details and populate the form for you.',
+    "Upload a complaint document or paste text above. I will automatically extract the details and populate the form for you.",
   created_at: new Date().toISOString(),
 };
 
 const initialState: CopilotChatState = {
   messages: [DEFAULT_WELCOME_MESSAGE],
   sessionId: null,
-  extractionStatus: 'idle',
+  extractionStatus: "idle",
   extractionProgress: 0,
-  extractionStatusLabel: '',
+  extractionStatusLabel: "",
   isProcessing: false,
   isRestoringChat: false,
   error: null,
@@ -37,7 +38,10 @@ const initialState: CopilotChatState = {
 function persistMessages(complaintId: string | null, messages: ChatMessage[]) {
   if (!complaintId) return;
   try {
-    localStorage.setItem(getChatStorageKey(complaintId), JSON.stringify(messages));
+    localStorage.setItem(
+      getChatStorageKey(complaintId),
+      JSON.stringify(messages),
+    );
   } catch {
     // ignore
   }
@@ -46,9 +50,15 @@ function persistMessages(complaintId: string | null, messages: ChatMessage[]) {
 // ── Thunks ────────────────────────────────────────────────────────────────────
 
 export const sendChatMessage = createAsyncThunk(
-  'copilotChat/send',
-  async ({ complaintId, message }: { complaintId: string; message: string }) => {
-    const { data } = await api.post('/copilot/chat', {
+  "copilotChat/send",
+  async ({
+    complaintId,
+    message,
+  }: {
+    complaintId: string;
+    message: string;
+  }) => {
+    const { data } = await api.post("/copilot/chat", {
       complaint_id: complaintId,
       message,
     });
@@ -57,24 +67,30 @@ export const sendChatMessage = createAsyncThunk(
       reply: data.reply as string,
       updated_fields: (data.updated_fields || {}) as Record<string, string>,
     };
-  }
+  },
 );
 
 /**
  * Restores chat history for a complaint.
- * Priority: 1) Server DB via GET /chat-messages, 2) localStorage cache, 3) welcome message.
  */
 export const restoreChatForComplaint = createAsyncThunk(
-  'copilotChat/restore',
+  "copilotChat/restore",
   async (complaintId: string) => {
     // 1. Try fetching from server
     try {
-      const { data } = await api.get<ChatMessage[]>(`/complaints/${complaintId}/chat-messages`);
+      const { data } = await api.get<ChatMessage[]>(
+        `/complaints/${complaintId}/chat-messages`,
+      );
       if (data && data.length > 0) {
         // Cache to localStorage for offline resilience
         try {
-          localStorage.setItem(getChatStorageKey(complaintId), JSON.stringify(data));
-        } catch { /* ignore quota */ }
+          localStorage.setItem(
+            getChatStorageKey(complaintId),
+            JSON.stringify(data),
+          );
+        } catch {
+          /* ignore quota */
+        }
         return data;
       }
     } catch {
@@ -85,29 +101,38 @@ export const restoreChatForComplaint = createAsyncThunk(
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed as ChatMessage[];
-      } catch { /* ignore */ }
+        if (Array.isArray(parsed) && parsed.length > 0)
+          return parsed as ChatMessage[];
+      } catch {
+        /* ignore */
+      }
     }
     // 3. Return null → slice will show welcome message
     return null;
-  }
+  },
 );
 
 // ── Slice ─────────────────────────────────────────────────────────────────────
 
 const copilotChatSlice = createSlice({
-  name: 'copilotChat',
+  name: "copilotChat",
   initialState,
   reducers: {
     addUserMessage(
       state,
-      action: PayloadAction<string | { message: string; complaintId?: string | null }>
+      action: PayloadAction<
+        string | { message: string; complaintId?: string | null }
+      >,
     ) {
-      const content = typeof action.payload === 'string' ? action.payload : action.payload.message;
-      const complaintId = typeof action.payload === 'string' ? null : action.payload.complaintId;
+      const content =
+        typeof action.payload === "string"
+          ? action.payload
+          : action.payload.message;
+      const complaintId =
+        typeof action.payload === "string" ? null : action.payload.complaintId;
       const newMsg: ChatMessage = {
         id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-        role: 'user',
+        role: "user",
         content,
         created_at: new Date().toISOString(),
       };
@@ -118,13 +143,19 @@ const copilotChatSlice = createSlice({
     },
     addAssistantMessage(
       state,
-      action: PayloadAction<string | { message: string; complaintId?: string | null }>
+      action: PayloadAction<
+        string | { message: string; complaintId?: string | null }
+      >,
     ) {
-      const content = typeof action.payload === 'string' ? action.payload : action.payload.message;
-      const complaintId = typeof action.payload === 'string' ? null : action.payload.complaintId;
+      const content =
+        typeof action.payload === "string"
+          ? action.payload
+          : action.payload.message;
+      const complaintId =
+        typeof action.payload === "string" ? null : action.payload.complaintId;
       const newMsg: ChatMessage = {
         id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-        role: 'assistant',
+        role: "assistant",
         content,
         created_at: new Date().toISOString(),
       };
@@ -135,11 +166,15 @@ const copilotChatSlice = createSlice({
     },
     setExtractionStatus(
       state,
-      action: PayloadAction<{ status: ExtractionStatus; progress: number; label?: string }>
+      action: PayloadAction<{
+        status: ExtractionStatus;
+        progress: number;
+        label?: string;
+      }>,
     ) {
       state.extractionStatus = action.payload.status;
       state.extractionProgress = action.payload.progress;
-      state.extractionStatusLabel = action.payload.label ?? '';
+      state.extractionStatusLabel = action.payload.label ?? "";
     },
     setSessionId(state, action: PayloadAction<string>) {
       state.sessionId = action.payload;
@@ -154,9 +189,9 @@ const copilotChatSlice = createSlice({
       }
       state.messages = [DEFAULT_WELCOME_MESSAGE];
       state.sessionId = null;
-      state.extractionStatus = 'idle';
+      state.extractionStatus = "idle";
       state.extractionProgress = 0;
-      state.extractionStatusLabel = '';
+      state.extractionStatusLabel = "";
       state.isProcessing = false;
       state.error = null;
     },
@@ -171,7 +206,7 @@ const copilotChatSlice = createSlice({
         state.isProcessing = false;
         const newMsg: ChatMessage = {
           id: `msg-${Date.now()}`,
-          role: 'assistant',
+          role: "assistant",
           content: action.payload.reply,
           created_at: new Date().toISOString(),
         };
@@ -180,7 +215,7 @@ const copilotChatSlice = createSlice({
       })
       .addCase(sendChatMessage.rejected, (state, action) => {
         state.isProcessing = false;
-        state.error = action.error.message ?? 'Failed to send message';
+        state.error = action.error.message ?? "Failed to send message";
       })
       // Restore chat from server
       .addCase(restoreChatForComplaint.pending, (state) => {
